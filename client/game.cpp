@@ -4,6 +4,8 @@ Game::Game()
 {
 	this->app = new RenderWindow(VideoMode(WIDTH, HEIGHT), "ChinesePoker", Uint32(5));
 	this->app->setFramerateLimit(60);
+	::sf::WindowHandle h = app->getSystemHandle();
+	::SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 	this->start_scene.app = app;
 	this->start_scene.Initial_window(app);
 	this->start_scene.Initial_assets();
@@ -61,7 +63,9 @@ void Game::Update()
 			OnStartScene = false;
 			OnPlayScene = true;
 			start_scene.bool_list["isExit"] = false;
+			isLoading = true;
 			InitialGameScene();
+			isLoading = false;
 			return;
 		}
 		if (!start_scene.bool_list["isRunning"])

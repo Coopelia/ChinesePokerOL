@@ -13,9 +13,8 @@ bool isLoading = true;
 
 void LoadAnim()
 {
-	::std::cout << "正在加载......\n";
-	RenderWindow* app = new RenderWindow(VideoMode(360, 360), "Loading");
-	app->setFramerateLimit(60);
+	RenderWindow* app;
+	::sf::WindowHandle h;
 	Texture t;
 	Sprite s;
 	t.loadFromFile("assets/image/game/登录/加载/1.png");
@@ -24,20 +23,33 @@ void LoadAnim()
 	s.setPosition(180, 180);
 	Clock cl;
 	float et = 0;
-	while (isLoading)
+	while (true)
 	{
-		et += cl.restart().asMilliseconds();
-		if (et >= 10)
+		if (isLoading)
 		{
-			et = 0;
-			s.rotate(5);
+			::std::cout << "正在加载......\n";
+			app = new RenderWindow(VideoMode(360, 360), "Loading");
+			app->setFramerateLimit(60);
+			h = app->getSystemHandle();
+			::SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+			while (isLoading)
+			{
+				et += cl.restart().asMilliseconds();
+				if (et >= 10)
+				{
+					et = 0;
+					s.rotate(5);
+				}
+				app->clear();
+				app->draw(s);
+				app->requestFocus();
+				app->display();
+			}
+			::std::cout << "加载完成\n";
+			app->close();
+			delete app;
 		}
-		app->clear();
-		app->draw(s);
-		app->display();
 	}
-	::std::cout << "加载完成\n";
-	app->close();
-	delete app;
+
 	return;
 }
