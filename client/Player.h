@@ -4,13 +4,6 @@
 #include"MyClock.h"
 #include"DFSCard.h"
 
-struct  PlayerInfo
-{
-	bool isReady;
-	bool isMyTime;
-	int playerId;//0-2
-};
-
 class User//用户类
 {
 public:
@@ -25,9 +18,10 @@ public:
 	bool isWin;
 	MyClock clock_daojishi;//出牌倒计时
 	Sprite sHead, sCall, sNoCard, sClock;
-	Texture tHead[3], tCallOne, tCallTwo, tCallThree, tCallNo, tNoCard, tClock;
+	Texture tHead[4], tCallOne, tCallTwo, tCallThree, tCallNo, tNoCard, tClock;
 	Font font;
 	Text tNum_rest, tDaojishi;
+	int playerId;
 	User();
 	void update();//每帧更新
 	void sort();//排序手牌

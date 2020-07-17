@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "Connection.h"
 
 User::User()
 {
@@ -10,6 +11,7 @@ User::User()
 	isWin = false;
 	num_card = 0;
 	s_call = -1;
+	playerId = -1;
 	for (int i = 0; i < 20; i++)
 	{
 		hand_card[i] = -1;
@@ -17,6 +19,7 @@ User::User()
 	tHead[0].loadFromFile("assets/image/game/房间/no.png");
 	tHead[1].loadFromFile("assets/image/game/房间/dizhu.png");
 	tHead[2].loadFromFile("assets/image/game/房间/nonmin.png");
+	tHead[3].loadFromFile("assets/image/game/房间/wait.png");
 	tCallNo.loadFromFile("assets/image/game/功能/斗地主/提示_不抢.png");
 	tCallOne.loadFromFile("assets/image/game/功能/斗地主/提示_1.png");
 	tCallTwo.loadFromFile("assets/image/game/功能/斗地主/提示_2.png");
@@ -43,22 +46,27 @@ void User::Initial(RenderWindow* app)
 
 void User::update()
 {
-	switch (sid)
+	if(playerId==-1&&connector.isConnected)
+		sHead.setTexture(tHead[3]);
+	else
 	{
-	case NO:
-		//name = " ";
-		sHead.setTexture(tHead[0]);
-		break;
-	case DIZHU:
-		//name = L"地主";
-		sHead.setTexture(tHead[1]);
-		break;
-	case NONM:
-		//name = L"农民";
-		sHead.setTexture(tHead[2]);
-		break;
-	default:
-		break;
+		switch (sid)
+		{
+		case NO:
+			//name = " ";
+			sHead.setTexture(tHead[0]);
+			break;
+		case DIZHU:
+			//name = L"地主";
+			sHead.setTexture(tHead[1]);
+			break;
+		case NONM:
+			//name = L"农民";
+			sHead.setTexture(tHead[2]);
+			break;
+		default:
+			break;
+		}
 	}
 	if (s_call != -1)
 	{

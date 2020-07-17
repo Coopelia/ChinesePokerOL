@@ -7,18 +7,21 @@ int px1 = 0;
 int py1 = 0;
 int px2 = 0;
 int py2 = 0;
+int roomId = -1;
 bool isRhythm = false;
 bool isLoading = true;
 
-void LoadAnim(RenderWindow* app)
+void LoadAnim()
 {
 	::std::cout << "正在加载......\n";
+	RenderWindow* app = new RenderWindow(VideoMode(360, 360), "Loading");
+	app->setFramerateLimit(60);
 	Texture t;
 	Sprite s;
 	t.loadFromFile("assets/image/game/登录/加载/1.png");
 	s.setTexture(t);
 	s.setOrigin(75, 75);
-	s.setPosition(640, 360);
+	s.setPosition(180, 180);
 	Clock cl;
 	float et = 0;
 	while (isLoading)
@@ -34,5 +37,7 @@ void LoadAnim(RenderWindow* app)
 		app->display();
 	}
 	::std::cout << "加载完成\n";
+	app->close();
+	delete app;
 	return;
 }

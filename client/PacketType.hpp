@@ -1,3 +1,4 @@
+#pragma once
 #include "Def.h"
 #include "Room.h"
 #include "Player.h"
@@ -5,9 +6,10 @@
 namespace pt
 {
 	enum MSG_TYPE {
+		reNull=0,
 		//客户端发送(服务器接收)
 		//request
-		reConnect=0,
+		reConnect,
 		reDisconnect,
 		reGetRoomList,
 		reCreatRoom,
@@ -15,6 +17,7 @@ namespace pt
 		reReady,
 		reUnReady,
 		reExitRoom,
+		reClearDeskCard,
 
 		//date
 		daCallDec,
@@ -25,11 +28,12 @@ namespace pt
 		daPlayerStateInfo_Ready,
 		daPlayerStateInfo_Call,
 		daPlayerStateInfo_Chu,
-		daPlayerSelfCard,
+		daBeishu,
 		daDizhuCard,
 		daDeskCard,
 		daGameOver,
 		daRoomList,
+		daDealCard,
 	};
 	// base
 	class NetworkEvent
@@ -37,195 +41,224 @@ namespace pt
 	public:
 		NetworkEvent(MSG_TYPE type);
 		virtual ~NetworkEvent();
+
+		friend sf::Packet& operator>>(sf::Packet&, NetworkEvent& self);
+		friend sf::Packet& operator<<(sf::Packet&, const NetworkEvent& self);
+
 		MSG_TYPE type()const;
 	protected:
-		const MSG_TYPE type;
+		MSG_TYPE _type;
 	};
 
-	class Connected : public NetworkEvent
+	//reConnect
+	class ReConnect :public NetworkEvent
 	{
 	public:
-		Connected();
+			ReConnect();
 	};
 
-	class Disconnected : public NetworkEvent
+	//	reDisconnect
+	class ReDisconnect :public NetworkEvent
 	{
 	public:
-		Disconnected();
+		ReDisconnect();
 	};
 
-	class LogOut : public NetworkEvent
+	//	reGetRoomList
+	class ReGetRoomList :public NetworkEvent
 	{
 	public:
-		LogOut();
-		void setMessage(::std::string s);
-		::std::string getMessage();
-	private:
-		::std::string msg;
+		ReGetRoomList();
 	};
 
-	class GetListGame : public NetworkEvent
+	//	reCreatRoom
+	class ReCreatRoom :public NetworkEvent
 	{
 	public:
-		GetListGame();
-		const ::std::vector<Room> getRoomList()const;
-	private:
+		ReCreatRoom();
+	};
+
+	//	reJoinRoom
+	class ReJoinRoom :public NetworkEvent
+	{
+	public:
+		ReJoinRoom();
+	};
+
+	//	reReady
+	class ReReady :public NetworkEvent
+	{
+	public:
+		ReReady();
+	};
+
+	//	reUnReady
+	class ReUnReady :public NetworkEvent
+	{
+	public:
+		ReUnReady();
+	};
+
+	//	reExitRoom
+	class ReExitRoom :public NetworkEvent
+	{
+	public:
+		ReExitRoom();
+	};
+
+	//reClearDeskCard
+	class ReClearDeskCard :public NetworkEvent
+	{
+	public:
+		ReClearDeskCard();
+	};
+
+	//	daCallDec
+	class DaCallDec :public NetworkEvent
+	{
+	public:
+		DaCallDec();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaCallDec& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaCallDec& self);
+
+		int s_call;
+	};
+
+	//	daChuDec
+	class DaChuDec :public NetworkEvent
+	{
+	public:
+		DaChuDec();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaChuDec& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaChuDec& self);
+
+		DEC dec;
+		::std::vector<int> cards;
+	};
+
+	//	daGameState
+	class DaGameState :public NetworkEvent
+	{
+	public:
+		DaGameState();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaGameState& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaGameState& self);
+
+		GameSta gsta;
+	};
+
+	//	daPlayerStateInfo_Ready
+	class DaPlayerStateInfo_Ready :public NetworkEvent
+	{
+	public:
+		DaPlayerStateInfo_Ready();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaPlayerStateInfo_Ready& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaPlayerStateInfo_Ready& self);
+
+		::std::vector<::std::pair<int,bool>> isReady;//first=id,second=isReady(0:false,1:true)
+	};
+
+	//	daPlayerStateInfo_Call
+	class DaPlayerStateInfo_Call :public NetworkEvent
+	{
+	public:
+		DaPlayerStateInfo_Call();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaPlayerStateInfo_Call& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaPlayerStateInfo_Call& self);
+
+		int player_turned_id;
+		int s_call;
+	};
+
+	//	daPlayerStateInfo_Chu
+	class DaPlayerStateInfo_Chu :public NetworkEvent
+	{
+	public:
+		DaPlayerStateInfo_Chu();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaPlayerStateInfo_Chu& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaPlayerStateInfo_Chu& self);
+
+		int player_turned_id;
+		DEC dec;
+		::std::vector<::std::pair<::std::pair<int, SF>, ::std::pair<int, ::std::vector<int>>>> playerInfo;//id,sf,num,card
+	};
+
+	//daBeishu
+	class DaBeishu :public NetworkEvent
+	{
+	public:
+		DaBeishu();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaBeishu& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaBeishu& self);
+
+		int beishu;
+	};
+
+	//	daDizhuCard
+	class DaDizhuCard :public NetworkEvent
+	{
+	public:
+		DaDizhuCard();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaDizhuCard& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaDizhuCard& self);
+
+		::std::vector<int> cards;
+	};
+
+	//	daDeskCard
+	class DaDeskCard:public NetworkEvent
+	{
+	public:
+		DaDeskCard();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaDeskCard& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaDeskCard& self);
+
+		::std::vector<int> cards;
+	};
+
+	//	daGameOver
+	class DaGameOver :public NetworkEvent
+	{
+	public:
+		DaGameOver();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaGameOver& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaGameOver& self);
+
+		int winner_id;
+	};
+
+	//	daRoomList
+	class DaRoomList :public NetworkEvent
+	{
+	public:
+		DaRoomList();
+
+		friend sf::Packet& operator>>(sf::Packet&, DaGameOver& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaGameOver& self);
+
 		::std::vector<Room> room;
 	};
 
-	class SetListGame : public NetworkEvent
+	//daDealCard
+	class DaDealCard :public NetworkEvent
 	{
 	public:
-		SetListGame();
+		DaDealCard();
 
-		friend sf::Packet& operator>>(sf::Packet&, SetListGame& self);
-		friend sf::Packet& operator<<(sf::Packet&, const SetListGame& self);
+		friend sf::Packet& operator>>(sf::Packet&, DaDealCard& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaDealCard& self);
 
-		void add(Room room);
-		const ::std::vector<Room>& getRoom() const;
-	private:
-		::std::vector<Room> room;
-	};
-
-	class CreateGame : public NetworkEvent
-	{
-	public:
-		CreateGame();
-	};
-
-	class JoinGame : public NetworkEvent
-	{
-	public:
-		JoinGame(int roomId);
-
-		int GetRoomId()const;
-
-		friend sf::Packet& operator>>(sf::Packet&, JoinGame& self);
-		friend sf::Packet& operator<<(sf::Packet&, const JoinGame& self);
-
-	private:
-		int roomId;
-	};
-
-	class JoinGameOk : public NetworkEvent
-	{
-	public:
-		JoinGameOk(int roomId);
-
-		friend sf::Packet& operator>>(sf::Packet&, JoinGameOk& self);
-		friend sf::Packet& operator<<(sf::Packet&, const JoinGameOk& self);
-
-		::std::vector<PlayerInfo> getPlayerList();
-	private:
-		int roomId;
-		::std::vector<PlayerInfo> playerList;
-	};
-
-	class JoinGameReject : public NetworkEvent
-	{
-	public:
-		JoinGameReject(int roomId);
-
-		int GetRoomId()const;
-
-		friend sf::Packet& operator>>(sf::Packet&, JoinGameReject& self);
-		friend sf::Packet& operator<<(sf::Packet&, const JoinGameReject& self);
-	private:
-		int roomId;
-	};
-
-	//in game
-	class UpdateSF :public NetworkEvent
-	{
-	public:
-		UpdateSF(SF sfId);
-	private:
-		SF sfId;//玩家身份（地主or农民）
-	};
-	
-	class UpdateDeskCard :public NetworkEvent
-	{
-	public:
-		UpdateDeskCard();
-
-		void setDeskCard(::std::vector<int>& cards);
-		void setDizhuCard(::std::vector<int>& cards);
-		
-		::std::vector<int> getDeskCard();
-		::std::vector<int> getDizhuCard();
-
-	private:
-		::std::vector<int> desk_card;
-		::std::vector<int> dizhu_card;
-	};
-
-	class UpdateHandCard :public NetworkEvent
-	{
-	public:
-		UpdateHandCard();
-
-		void setHandCard(::std::vector<int>& cards);
-
-		::std::vector<int> getHandCard();
-
-	private:
-		::std::vector<int> hand_card;
-	};
-
-	class UpdateState :public NetworkEvent
-	{
-	public:
-		UpdateState();
-
-		PlayerInfo getPlayerInfo();
-
-	private:
-		PlayerInfo player_info;
-	};
-
-	class UpdateTimeChuPai :public NetworkEvent
-	{
-	public:
-		UpdateTimeChuPai();
-
-	};
-
-	class UpdateBeiShu :public NetworkEvent
-	{
-	public:
-		UpdateBeiShu();
-
-
-	};
-
-	class UpdateGameOver :public NetworkEvent
-	{
-	public:
-		UpdateGameOver();
-
-	};
-
-	//叫地主阶段
-	class UpdateTimeCall :public NetworkEvent
-	{
-	public:
-		UpdateTimeCall();
-
-	};
-
-	class UpdateScoreCall :public NetworkEvent
-	{
-	public:
-		UpdateScoreCall();
-
-
-	};
-
-	class UpdateResultCall :public NetworkEvent
-	{
-	public:
-		UpdateResultCall();
-
-
+		int playerId;
+		::std::vector<int> cards;
 	};
 }

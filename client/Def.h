@@ -56,25 +56,13 @@ enum PukeType {
 	bomb, //Õ¨µ¯
 	rocket //»ð¼ý
 };
+enum GameSta { Ready = 0, Deal, Call, Play };
 enum DEC { NOT = 0, PASS, CHU };
 extern int vol_bgm, vol_sound;
 extern int jb;
 extern int px1, py1, px2, py2;
+extern int roomId;
 extern bool isRhythm;
-//extern class Card;
-//extern class Puke;
-//extern class Button;
-//extern class StartScene;
-//extern class GameScene;
-//extern class Game;
-//extern class MyClock;
-//extern class User;
-//extern class Player;
-//extern class AI;
-//extern class PukeManager;
-//extern class MouseRectIn;
-//extern class Mail;
-//extern class GunCharm;
-
 extern bool isLoading;
-void LoadAnim(RenderWindow* app);
+
+void LoadAnim();

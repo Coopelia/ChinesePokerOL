@@ -1419,6 +1419,7 @@ PukeType PukeManager::checkType(int* card, int num)
 		else
 			return illegal;
 	}
+	return illegal;
 }
 
 void PukeManager::JudgeCard(Player& human, PukeType& type)

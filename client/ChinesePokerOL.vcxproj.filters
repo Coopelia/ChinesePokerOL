@@ -57,19 +57,16 @@
     <ClInclude Include="OLPukeManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Connection.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Packet.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="random.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="MsgType.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Room.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketType.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Connection.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomGUI.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -119,13 +116,22 @@
     <ClCompile Include="OLPukeManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Room.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="PacketType.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="Connection.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Packet.cpp">
+    <ClCompile Include="RoomGUI.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Room.cpp">
+    <ClCompile Include="MsgQueue.h">
+      <Filter>头文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MsgQueue.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

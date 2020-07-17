@@ -4,16 +4,15 @@ Game::Game()
 {
 	this->app = new RenderWindow(VideoMode(WIDTH, HEIGHT), "ChinesePoker", Uint32(5));
 	this->app->setFramerateLimit(60);
-	this->start_scene.app = this->app;
-	this->start_scene.Initial_assets();
+	this->start_scene.app = app;
 	this->start_scene.Initial_window(app);
+	this->start_scene.Initial_assets();
 	this->game_scene = NULL;
 	this->OnStartScene = true;
 	this->OnPlayScene = false;
 	this->isOvered = false;
 	this->isOnWel = true;
 	this->gameOver = 0;
-	(*app).setFramerateLimit(60);
 	isLoading = false;
 }
 
@@ -22,16 +21,15 @@ Game::~Game()
 	delete this->app;
 }
 
-void Game::Initial_gameScene()
+void Game::InitialGameScene()
 {
-	if (start_scene.next_scene == single)
-		game_scene = new GameScene();
+	if (this->start_scene.next_scene == danji)
+		this->game_scene = new GameScene();
 	else
-		game_scene = new GameSceneOL;
-	this->game_scene->app = this->app;
-	this->game_scene->Initial_assets();
+		this->game_scene = new GameSceneOL();
+	this->game_scene->app = app;
 	this->game_scene->Initial_window(app);
-	isLoading = false;
+	this->game_scene->Initial_assets();
 }
 
 void Game::GameOver()
@@ -63,11 +61,8 @@ void Game::Update()
 			OnStartScene = false;
 			OnPlayScene = true;
 			start_scene.bool_list["isExit"] = false;
-			isLoading = true;
-			::std::thread t1 = ::std::thread(LoadAnim);
-			::std::thread t2 = ::std::thread(::std::mem_fn(&Game::Initial_gameScene), this);
-			t1.join();
-			t2.join();
+			InitialGameScene();
+			return;
 		}
 		if (!start_scene.bool_list["isRunning"])
 		{
@@ -84,6 +79,7 @@ void Game::Update()
 			OnStartScene = true;
 			OnPlayScene = false;
 			game_scene->bool_list["isExit"] = false;
+			return;
 		}
 		if (!game_scene->bool_list["isRunning"])
 		{
@@ -148,4 +144,19 @@ void Game::Run()
 		}
 		(*app).display();
 	}
+}
+
+void Game::sender()
+{
+	while (true)
+	{
+		while (!q_sender.empty())
+			connector.sendEvent();
+	}
+}
+
+void Game::reciever()
+{
+	while (true)
+		connector.receiveEvent();
 }

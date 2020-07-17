@@ -2,10 +2,11 @@
 
 Scene::Scene()
 {
-	this->bool_list.insert(::std::pair<::std::string, bool>("isRunning", false));//是否在当前场景
-	this->bool_list.insert(::std::pair<::std::string, bool>("isExit", false));//是否离开当前场景
+	bool_list.insert(::std::pair<::std::string, bool>("isRunning", false));//是否在当前场景
+	bool_list.insert(::std::pair<::std::string, bool>("isExit", false));//是否离开当前场景
 	bool_list.insert(::std::pair<::std::string, bool>("OnSetting", false));
 	bool_list.insert(::std::pair<::std::string, bool>("OnExit", false));
+	bool_list.insert(::std::pair<::std::string, bool>("OnError", false));
 	this->value_bg = 1;
 	this->app = NULL;
 	tBack_setting.loadFromFile("assets/image/game/大幅/设置菜单背景.png");
@@ -13,6 +14,8 @@ Scene::Scene()
 	sBackMini.setScale(0.25, 0.25);
 	tBack_exit.loadFromFile("assets/image/game/大厅弹框/exit.png");
 	sBack_exit.setTexture(tBack_exit);
+	tBack_error.loadFromFile("assets/image/game/大幅/连接出错背景.png");
+	sBack_error.setTexture(tBack_error);
 	bt_exit_ok.setTextrue("assets/image/game/大厅弹框/#按钮/确定.png");
 	bt_exit_cancel.setTextrue("assets/image/game/大厅弹框/#按钮/取消.png");
 	bt_setting_ok.setTextrue("assets/image/game/大厅弹框/#按钮/确定.png");
@@ -24,6 +27,7 @@ Scene::Scene()
 	bt_bg_right.setTextrue("assets/image/game/大厅弹框/设置/right.png");
 	bt_rhythm_left.setTextrue("assets/image/game/大厅弹框/设置/left.png");
 	bt_rhythm_right.setTextrue("assets/image/game/大厅弹框/设置/right.png");
+	bt_error_ok.setTextrue("assets/image/game/大厅弹框/#按钮/确定.png");
 	font.loadFromFile("assets/fonts/fSimpleRound.ttf");
 	text_rhythm.setFont(font);
 	text_rhythm.setString(L"普通模式");
@@ -63,6 +67,13 @@ void Scene::input_exit(Event& e)
 	}
 	if (bt_exit_cancel.onClick(e))
 		bool_list["OnExit"] = false;
+}
+
+void Scene::input_error(RenderWindow* app, Event& e)
+{
+	bt_error_ok.app = app;
+	if (bt_error_ok.onClick(e))
+		bool_list["OnError"] = false;
 }
 
 void Scene::draw_setting(RenderWindow* app)
@@ -118,6 +129,15 @@ void Scene::draw_exit(RenderWindow* app)
 	bt_exit_cancel.show();
 }
 
+void Scene::draw_error(RenderWindow* app)
+{
+	sBack_error.setPosition(200, 60);
+	bt_error_ok.setPosition(570, 450);
+	app->draw(sBack_error);
+	bt_error_ok.app = app;
+	bt_error_ok.show();
+}
+
 StartScene::StartScene()
 {
 	bool_list.insert(::std::pair<::std::string, bool>("OnWanfa", false));
@@ -125,11 +145,11 @@ StartScene::StartScene()
 	bool_list.insert(::std::pair<::std::string, bool>("OnZhanji", false));
 	bool_list.insert(::std::pair<::std::string, bool>("OnStore", false));
 	bool_list.insert(::std::pair<::std::string, bool>("OnMail", false));
+	bool_list.insert(::std::pair<::std::string, bool>("OnJoin", false));
 }
 
 void StartScene::Initial_window(RenderWindow* app)
 {
-	this->app = app;
 	this->bt_bgm_left.app = app;
 	this->bt_bgm_right.app = app;
 	this->bt_bg_left.app = app;
@@ -167,7 +187,10 @@ void StartScene::Initial_window(RenderWindow* app)
 	this->bt_store_close.app = app;
 	this->bt_rhythm_left.app = app;
 	this->bt_rhythm_right.app = app;
+	bt_error_ok.app = app;
 	this->mail.initial(app, 230, 180);
+	this->room_menu.initial_window(app);
+	this->bt_join_exit.app = app;
 }
 
 void StartScene::Initial_assets()
@@ -228,6 +251,7 @@ void StartScene::Initial_assets()
 	bt_store.setTextrue("assets/image/game/大厅/菜单-商城.png");
 	bt_wanfa.setTextrue("assets/image/game/大厅/菜单-玩法.png");
 	bt_zhanji.setTextrue("assets/image/game/大厅/菜单-战绩.png");
+	bt_join_exit.setTextrue("assets/image/game/大厅弹框/close.png");
 }
 
 void StartScene::Start()
@@ -287,6 +311,26 @@ void StartScene::draw_store()
 	bt_store_close.setPosition(990, 30);
 	(*app).draw(sBack_store);
 	bt_store_close.show();
+}
+
+void StartScene::input_join(Event& e)
+{
+	if (bt_join_exit.onClick(e))
+		bool_list["OnJoin"] = false;
+	roomId = room_menu.onClick(e);
+	if (roomId!=-1)
+	{
+		::std::cout << "加入了游戏：房间ID: " << roomId << ::std::endl;
+		bool_list["isExit"] = true;
+		bool_list["OnJoin"] = false;
+	}
+}
+
+void StartScene::draw_join()
+{
+	bt_join_exit.setPosition(990, 30);
+	room_menu.show();
+	bt_join_exit.show();
 }
 
 void StartScene::draw_main()
@@ -351,6 +395,10 @@ void StartScene::Draw()
 		draw_exit(app);
 	if (bool_list["OnStore"])
 		draw_store();
+	if (bool_list["OnError"])
+		draw_error(app);
+	if (bool_list["OnJoin"])
+		draw_join();
 }
 
 void StartScene::Input(Event& e)
@@ -369,22 +417,37 @@ void StartScene::Input(Event& e)
 		input_exit(e);
 	else if (bool_list["OnStore"])
 		input_store(e);
+	else if (bool_list["OnError"])
+		input_error(app, e);
+	else if (bool_list["OnJoin"])
+		input_join(e);
 	else
 		input_main(e);
 }
-
 
 void StartScene::input_main(Event& e)
 {
 	if (bt_Enter.onClick(e))
 	{
 		bool_list["isExit"] = true;
-		next_scene = single;
+		next_scene = danji;
 	}
-	else if (bt_creat.onClick(e))
+	if (bt_creat.onClick(e))
 	{
-		bool_list["isExit"] = true;
-		next_scene = oline;
+		if (!connector.isConnected)
+			bool_list["OnError"] = true;
+		else
+		{
+			bool_list["isExit"] = true;
+			next_scene = oline;
+		}
+	}
+	if (bt_join.onClick(e))
+	{
+		if (!connector.isConnected)
+			bool_list["OnError"] = true;
+		else
+			bool_list["OnJoin"] = true;
 	}
 	if (bt_setting.onClick(e))
 		bool_list["OnSetting"] = true;
@@ -546,6 +609,7 @@ void GameScene::Initial_window(RenderWindow* app)
 	this->bt_bg_right.app = app;
 	this->bt_rhythm_left.app = app;
 	this->bt_rhythm_right.app = app;
+	bt_error_ok.app = app;
 }
 
 void GameScene::Start()
@@ -1201,13 +1265,11 @@ GameSceneOL::GameSceneOL()
 	bool_list.insert(::std::pair<::std::string, bool>("OnExit", false));
 	bool_list.insert(::std::pair<::std::string, bool>("isDealing", false));
 	bool_list.insert(::std::pair<::std::string, bool>("isDealDizhu", false));
-	bool_list.insert(::std::pair<::std::string, bool>("isDealDizhu", false));
 	bool_list.insert(::std::pair<::std::string, bool>("isPlaying", false));
 	bool_list.insert(::std::pair<::std::string, bool>("isGameover", false));
 	bool_list.insert(::std::pair<::std::string, bool>("isPlayed_sd", false));
 	bool_list.insert(::std::pair<::std::string, bool>("	isShowOver", false));
-	bool_list.insert(::std::pair<::std::string, bool>("	isShooted", false));
-	bool_list.insert(::std::pair<::std::string, bool>("	isShooted", false));
+	bool_list.insert(::std::pair<::std::string, bool>("	isGaming", false));
 
 	puke_manager.human_self = &this->human_self;
 	puke_manager.human_1 = &this->human_1;
@@ -1303,12 +1365,15 @@ void GameSceneOL::Start()
 	bool_list["isRunning"] = true;
 	bool_list["isDealing"] = true;
 	score = 0;
-	elapsTime_shoot = 0;
-	totalTime_shoot = 4000;
-	puke_manager.Start();
+	puke_manager.start();
 	if (isRhythm)
 		bgm.openFromFile("assets/Sound/MusicEx/MusicEx_Exciting.ogg");
 	bgm.play();
+	human_self.playerId = connector.hostId();
+	player_turned_id = 0;
+	::pt::ReReady rr;
+	while (!connector.sendNetworkEvent(::pt::reReady, rr))
+		::std::cout << "连接中....\n";
 }
 
 void GameSceneOL::Update()
@@ -1319,15 +1384,42 @@ void GameSceneOL::Update()
 	human_self.update();
 	human_1.update();
 	human_2.update();
-	if (bool_list["isDealing"])
+	::pt::DaGameState dgs;
+	while (!connector.getNetworkEvent(dgs))
+		::std::cout << "连接中......\n";
+	switch (dgs.gsta)
 	{
-		if (!isRhythm)
+	case Ready:
+		bool_list["isGaming"] = false;
+		break;
+	case Deal:
+		bool_list["isGaming"] = true;
+		bool_list["isDealing"] = true;
+		bool_list["isDealDizhu"] = false;
+		break;
+	case Call:
+		bool_list["isGaming"] = true;
+		bool_list["isDealing"] = true;
+		bool_list["isDealDizhu"] = true;
+		break;
+	case Play:
+		bool_list["isGaming"] = true;
+		bool_list["isDealing"] = false;
+		bool_list["isDealDizhu"] = false;
+		bool_list["isPlaying"] = true;
+		break;
+	default:
+		break;
+	}
+	if (bool_list["isGaming"])
+	{
+		if (bool_list["isDealing"])
 		{
-			if (puke_manager.clock_deal.isRun == false)
-				puke_manager.clock_deal.start();
-			puke_manager.clock_deal.update();
-			if (puke_manager.num_temp > 3)
+			if (!bool_list["isDealDizhu"])
 			{
+				if (puke_manager.clock_deal.isRun == false)
+					puke_manager.clock_deal.start();
+				puke_manager.clock_deal.update();
 				if (puke_manager.clock_deal.minTime >= 300)
 				{
 					puke_manager.deal();
@@ -1336,160 +1428,149 @@ void GameSceneOL::Update()
 			}
 			else
 			{
-				puke_manager.clock_deal.stop();
-				bool_list["isDealing"] = false;
-				bool_list["isDealDizhu"] = true;
-				srand(time(0));
-				int r = rand() % 3;
-				if (r == 0)
+				::pt::DaPlayerStateInfo_Call dpsc;
+				while (!connector.getNetworkEvent(dpsc))
+					::std::cout << "连接中......\n";
+				if (dpsc.player_turned_id != player_turned_id)
+				{
+					player_turned_id = dpsc.player_turned_id;
+					clock_showCall.restart();
+				}
+				if (dpsc.player_turned_id == human_self.playerId)
+				{
 					human_self.isCallingDizhu = true;
-				else if (r == 1)
+					human_self.s_call = dpsc.s_call;
+					human_1.isCallingDizhu = false;
+					human_2.isCallingDizhu = false;
+				}
+				else if (dpsc.player_turned_id == human_1.playerId)
+				{
 					human_1.isCallingDizhu = true;
-				else
+					human_1.s_call = dpsc.s_call;
+					human_self.isCallingDizhu = false;
+					human_2.isCallingDizhu = false;
+				}
+				else if (dpsc.player_turned_id == human_2.playerId)
+				{
 					human_2.isCallingDizhu = true;
+					human_2.s_call = dpsc.s_call;
+					human_1.isCallingDizhu = false;
+					human_self.isCallingDizhu = false;
+				}
 			}
 		}
-		else
+		else if (bool_list["isPlaying"])
 		{
-			if (human_self.num_card == 17)
-			{
-				isRhythm = false;
-				bgm.openFromFile("assets/Sound/MusicEx/MusicEx_Normal.ogg");
-				bgm.play();
-			}
-			else
-				puke_manager.deal();
-		}
-	}
-	if (bool_list["isPlaying"])
-	{
-		if (human_self.num_card == 0 || ai_1.num_card == 0 || ai_2.num_card == 0)
+			player_turned_id = puke_manager.player_turned_id;
+
+			//判断游戏是否结束
+			::pt::DaGameOver nwe;
+			while (!connector.getNetworkEvent(nwe))
+				::std::cout << "连接中......\n";
 			bool_list["isGameover"] = true;
-	}
-	if (bool_list["isGameover"])
-	{
-		if (human.sid == DIZHU)
-		{
-			if (human.num_card == 0)
-			{
-				human.isWin = true;
-				ai_1.isWin = false;
-				ai_2.isWin = false;
-			}
-			else
-			{
-				human.isWin = false;
-				ai_1.isWin = true;
-				ai_2.isWin = true;
-			}
+			::pt::ReUnReady rur;
+			while (!connector.sendNetworkEvent(::pt::reUnReady, rur))
+				::std::cout << "连接中......\n";
+			if (nwe.winner_id == human_self.playerId)
+				human_self.isWin = true;
+			else if (nwe.winner_id == human_1.playerId)
+				human_1.isWin = true;
+			else if (nwe.winner_id == human_2.playerId)
+				human_2.isWin = true;
 		}
-		else
+		if (bool_list["isGameover"])
 		{
-			if (ai_1.sid == DIZHU)
+			if (!bool_list["isPlayed_sd"])//如果是第一次执行以下代码
 			{
-				if (ai_1.num_card == 0)
+				text_over.setString(std::to_string(score * 100));
+				if (human_self.isWin)
 				{
-					human.isWin = false;
-					ai_1.isWin = true;
-					ai_2.isWin = false;
+					text_over.setFillColor(Color::Yellow);
+					jb += score * 100;
+					sOver.setTexture(tOver[0]);
+					mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Win.ogg");
 				}
 				else
 				{
-					human.isWin = true;
-					ai_1.isWin = false;
-					ai_2.isWin = true;
-				}
-			}
-			else
-			{
-				if (ai_2.num_card == 0)
-				{
-					human.isWin = false;
-					ai_1.isWin = false;
-					ai_2.isWin = true;
-				}
-				else
-				{
-					human.isWin = true;
-					ai_1.isWin = true;
-					ai_2.isWin = false;
+					text_over.setFillColor(Color::Cyan);
+					jb -= score * 100;
+					sOver.setTexture(tOver[1]);
+					mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Lose.ogg");
 				}
 			}
 		}
-		if (!bool_list["isPlayed_sd"])//如果是第一次执行以下代码
-		{
-			text_over.setString(std::to_string(score * 100));
-			if (human.isWin)
-			{
-				text_over.setFillColor(Color::Yellow);
-				jb += score * 100;
-				sOver.setTexture(tOver[0]);
-				mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Win.ogg");
-			}
-			else
-			{
-				text_over.setFillColor(Color::Cyan);
-				jb -= score * 100;
-				sOver.setTexture(tOver[1]);
-				mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Lose.ogg");
-			}
-		}
-	}
-	if (puke_manager.isGunCharm)
-	{
-		elapsTime_shoot += clock_shoot.restart().asMilliseconds();
-		if (elapsTime_shoot > totalTime_shoot)
-		{
-			elapsTime_shoot = 0;
-			puke_manager.isGunCharm = false;
-		}
-		(*app).setMouseCursorVisible(false);
 	}
 	else
-		(*app).setMouseCursorVisible(true);
+	{
+		::pt::DaPlayerStateInfo_Ready nwe;
+		while (!connector.getNetworkEvent(nwe))
+			::std::cout << "连接中......\n";
+		::std::vector<int> p;
+		for (int i = 0; i < nwe.isReady.size(); i++)
+			if (nwe.isReady[i].first != human_self.playerId && nwe.isReady[i].first != human_1.playerId && nwe.isReady[i].first != human_2.playerId)
+				p.push_back(nwe.isReady[i].first);
+		if (p.size() == 1)
+		{
+			if (human_1.playerId == -1)
+				human_1.playerId = p[0];
+			else
+				human_2.playerId = p[0];
+		}
+		else if (p.size() == 2)
+		{
+			human_1.playerId = p[0];
+			human_2.playerId = p[1];
+		}
+	}
+
+	//更新倍数
+	::pt::DaBeishu dbs;
+	while (!connector.getNetworkEvent(dbs))
+		::std::cout << "连接中......\n";
+	score = dbs.beishu;
 }
 
 void GameSceneOL::Draw()
 {
 	sBackground.setPosition(0, 0);
-	human.setPosition(34, 550);
-	human.tNum_rest.setPosition(140, 600);
+	human_self.setPosition(34, 550);
+	human_self.tNum_rest.setPosition(140, 600);
 	text_jb.setString(std::to_string(jb));
 	text_score.setString(std::to_string(score));
-	ai_1.setPosition(1120, 200);
-	ai_2.setPosition(85, 200);
+	human_1.setPosition(1120, 200);
+	human_2.setPosition(85, 200);
 	(*app).draw(sBackground);
-	human.show();
+	human_self.show();
 	(*app).draw(text_jb);
 	(*app).draw(text_score);
-	(*app).draw(human.tNum_rest);
-	ai_1.show();
-	ai_2.show();
+	(*app).draw(human_self.tNum_rest);
+	human_1.show();
+	human_2.show();
 	puke_manager.puke.Back.setPosition(1010, 150);
 	puke_manager.puke.Back.setScale(0.4, 0.4);
-	ai_1.tNum_rest.setPosition(1038, 180);
-	ai_1.tNum_rest.setCharacterSize(40);
-	ai_1.tNum_rest.setFillColor(Color::Yellow);
+	human_1.tNum_rest.setPosition(1038, 180);
+	human_1.tNum_rest.setCharacterSize(40);
+	human_1.tNum_rest.setFillColor(Color::Yellow);
 	(*app).draw(puke_manager.puke.Back);
-	(*app).draw(ai_1.tNum_rest);
+	(*app).draw(human_1.tNum_rest);
 	puke_manager.puke.Back.setPosition(182, 150);
 	puke_manager.puke.Back.setScale(0.4, 0.4);
-	ai_2.tNum_rest.setPosition(210, 180);
-	ai_2.tNum_rest.setCharacterSize(40);
-	ai_2.tNum_rest.setFillColor(Color::Yellow);
+	human_2.tNum_rest.setPosition(210, 180);
+	human_2.tNum_rest.setCharacterSize(40);
+	human_2.tNum_rest.setFillColor(Color::Yellow);
 	(*app).draw(puke_manager.puke.Back);
-	(*app).draw(ai_2.tNum_rest);
+	(*app).draw(human_2.tNum_rest);
 	if (bool_list["isDealDizhu"])
 	{
-		human.sCall.setPosition(610, 430);
-		human.sCall.setScale(1, 1);
-		ai_1.sCall.setPosition(905, 150);
-		ai_1.sCall.setScale(1, 1);
-		ai_2.sCall.setPosition(300, 150);
-		ai_2.sCall.setScale(1, 1);
-		(*app).draw(human.sCall);
-		(*app).draw(ai_1.sCall);
-		(*app).draw(ai_2.sCall);
+		human_self.sCall.setPosition(610, 430);
+		human_self.sCall.setScale(1, 1);
+		human_1.sCall.setPosition(905, 150);
+		human_1.sCall.setScale(1, 1);
+		human_2.sCall.setPosition(300, 150);
+		human_2.sCall.setScale(1, 1);
+		(*app).draw(human_self.sCall);
+		(*app).draw(human_1.sCall);
+		(*app).draw(human_2.sCall);
 	}
 	if (isRhythm && bool_list["isDealing"])
 	{
@@ -1505,10 +1586,10 @@ void GameSceneOL::Draw()
 		(*app).draw(sG);
 		(*app).draw(sH);
 		(*app).draw(sJ);
-		for (int i = 0; i < human.num_card; i++)
+		for (int i = 0; i < human_self.num_card; i++)
 		{
-			int k = human.hand_card[i] / 4;
-			int l = human.hand_card[i] % 4;
+			int k = human_self.hand_card[i] / 4;
+			int l = human_self.hand_card[i] % 4;
 			puke_manager.puke.c[k][l].sprite.setPosition((i % 4) * 70 + 30, (i / 4) * 120 + 100);
 			puke_manager.puke.c[k][l].sprite.setScale(0.5, 0.5);
 			(*app).draw(puke_manager.puke.c[k][l].sprite);
@@ -1517,61 +1598,61 @@ void GameSceneOL::Draw()
 	//绘制玩家扑克牌
 	if (!isRhythm)
 	{
-		for (int i = 0; i < human.num_card; i++)
+		for (int i = 0; i < human_self.num_card; i++)
 		{
-			int k = human.hand_card[i] / 4;
-			int l = human.hand_card[i] % 4;
+			int k = human_self.hand_card[i] / 4;
+			int l = human_self.hand_card[i] % 4;
 			puke_manager.puke.c[k][l].sprite.setScale(0.7, 0.7);
 			(*app).draw(puke_manager.puke.c[k][l].sprite);
 		}
 	}
 	//绘制出牌区
-	for (int i = 0; i < puke_manager.num_desk; i++)
+	for (int i = 0; i < puke_manager.deskCard.size(); i++)
 	{
 		int k = puke_manager.deskCard[i] / 4;
 		int l = puke_manager.deskCard[i] % 4;
 		(*app).draw(puke_manager.puke.c[k][l].sprite);
 	}
 	//过
-	if (human.dec == PASS)
+	if (human_self.dec == PASS)
 	{
-		human.sNoCard.setPosition(610, 430);
-		(*app).draw(human.sNoCard);
+		human_self.sNoCard.setPosition(610, 430);
+		(*app).draw(human_self.sNoCard);
 	}
-	if (ai_1.dec == PASS)
+	if (human_1.dec == PASS)
 	{
-		ai_1.sNoCard.setPosition(905, 150);
-		(*app).draw(ai_1.sNoCard);
+		human_1.sNoCard.setPosition(905, 150);
+		(*app).draw(human_1.sNoCard);
 	}
-	if (ai_2.dec == PASS)
+	if (human_2.dec == PASS)
 	{
-		ai_2.sNoCard.setPosition(300, 150);
-		(*app).draw(ai_2.sNoCard);
+		human_2.sNoCard.setPosition(300, 150);
+		(*app).draw(human_2.sNoCard);
 	}
 	//画倒计时
-	if (human.isMyTime)
+	if (human_self.isMyTime)
 	{
-		human.sClock.setScale(0.8, 0.8);
-		human.sClock.setPosition(620, 372);
-		human.tDaojishi.setPosition(649, 402);
-		(*app).draw(human.sClock);
-		(*app).draw(human.tDaojishi);
+		human_self.sClock.setScale(0.8, 0.8);
+		human_self.sClock.setPosition(620, 372);
+		human_self.tDaojishi.setPosition(649, 402);
+		(*app).draw(human_self.sClock);
+		(*app).draw(human_self.tDaojishi);
 	}
-	if (ai_1.isMyTime)
+	if (human_1.isMyTime)
 	{
-		ai_1.sClock.setScale(0.8, 0.8);
-		ai_1.sClock.setPosition(902, 167);
-		ai_1.tDaojishi.setPosition(930, 197);
-		(*app).draw(ai_1.sClock);
-		(*app).draw(ai_1.tDaojishi);
+		human_1.sClock.setScale(0.8, 0.8);
+		human_1.sClock.setPosition(902, 167);
+		human_1.tDaojishi.setPosition(930, 197);
+		(*app).draw(human_1.sClock);
+		(*app).draw(human_1.tDaojishi);
 	}
-	if (ai_2.isMyTime)
+	if (human_2.isMyTime)
 	{
-		ai_2.sClock.setScale(0.8, 0.8);
-		ai_2.sClock.setPosition(280, 167);
-		ai_2.tDaojishi.setPosition(309, 197);
-		(*app).draw(ai_2.sClock);
-		(*app).draw(ai_2.tDaojishi);
+		human_2.sClock.setScale(0.8, 0.8);
+		human_2.sClock.setPosition(280, 167);
+		human_2.tDaojishi.setPosition(309, 197);
+		(*app).draw(human_2.sClock);
+		(*app).draw(human_2.tDaojishi);
 	}
 	//画地主牌
 	if (bool_list["isDealDizhu"])
@@ -1605,19 +1686,19 @@ void GameSceneOL::Draw()
 	if (bool_list["isGameover"])//结束
 	{
 		int tx = 960, ty = 250;
-		for (int i = 0; i < ai_1.num_card; i++)
+		for (int i = 0; i < human_1.num_card; i++)
 		{
-			puke_manager.puke.c[ai_1.hand_card[i] / 4][ai_1.hand_card[i] % 4].sprite.setPosition(tx - (ai_1.num_card - i) * 20, ty);
-			puke_manager.puke.c[ai_1.hand_card[i] / 4][ai_1.hand_card[i] % 4].sprite.setScale(0.5, 0.5);
-			(*app).draw(puke_manager.puke.c[ai_1.hand_card[i] / 4][ai_1.hand_card[i] % 4].sprite);
+			puke_manager.puke.c[human_1.hand_card[i] / 4][human_1.hand_card[i] % 4].sprite.setPosition(tx - (human_1.num_card - i) * 20, ty);
+			puke_manager.puke.c[human_1.hand_card[i] / 4][human_1.hand_card[i] % 4].sprite.setScale(0.5, 0.5);
+			(*app).draw(puke_manager.puke.c[human_1.hand_card[i] / 4][human_1.hand_card[i] % 4].sprite);
 		}
 
 		tx = 270, ty = 150;
-		for (int i = 0; i < ai_2.num_card; i++)
+		for (int i = 0; i < human_2.num_card; i++)
 		{
-			puke_manager.puke.c[ai_2.hand_card[i] / 4][ai_2.hand_card[i] % 4].sprite.setPosition(tx + i * 20, ty);
-			puke_manager.puke.c[ai_2.hand_card[i] / 4][ai_2.hand_card[i] % 4].sprite.setScale(0.5, 0.5);
-			(*app).draw(puke_manager.puke.c[ai_2.hand_card[i] / 4][ai_2.hand_card[i] % 4].sprite);
+			puke_manager.puke.c[human_2.hand_card[i] / 4][human_2.hand_card[i] % 4].sprite.setPosition(tx + i * 20, ty);
+			puke_manager.puke.c[human_2.hand_card[i] / 4][human_2.hand_card[i] % 4].sprite.setScale(0.5, 0.5);
+			(*app).draw(puke_manager.puke.c[human_2.hand_card[i] / 4][human_2.hand_card[i] % 4].sprite);
 		}
 
 		if (!bool_list["isPlayed_sd"])
@@ -1631,24 +1712,15 @@ void GameSceneOL::Draw()
 		}
 		if (bool_list["isShowOver"])
 		{
-			human.sHead.setPosition(620, 400);
+			human_self.sHead.setPosition(620, 400);
 			(*app).draw(sOver);
-			(*app).draw(human.sHead);
+			(*app).draw(human_self.sHead);
 			(*app).draw(text_over);
 			bt_over_back.show();
 			bt_over_restart.show();
 		}
 	}
-	if (puke_manager.isGunCharm)
-	{
-		Vector2i mpos = Mouse::getPosition(*app);
-		sShoot.setOrigin(25, 25);
-		sShoot.setPosition(mpos.x, mpos.y);
-		text_shoot.setString(std::to_string((totalTime_shoot - elapsTime_shoot) / 1000) + "." + std::to_string(1000 - elapsTime_shoot % 1000));
-		text_shoot.setPosition(mpos.x + 30, mpos.y);
-		(*app).draw(sShoot);
-		(*app).draw(text_shoot);
-	}
+
 	bt_exit.setPosition(1210, 12);
 	bt_setting.setPosition(1130, 10);
 	bt_setting.show();
@@ -1660,108 +1732,28 @@ void GameSceneOL::player_turn_input(Event& e)
 	//叫地主阶段
 	if (bool_list["isDealDizhu"])
 	{
-		if (human.isCallingDizhu && human.s_call == -1)
-			human.callDizhu(e);
-		if (human.s_call != -1)
-		{
-			if (human.s_call == 3)
-			{
-				ai_1.s_call = 0;
-				ai_2.s_call = 0;
-			}
-			else
-				ai_1.isCallingDizhu = true;
-		}
-		if (ai_1.isCallingDizhu && ai_1.s_call == -1)
-			ai_1.callDizhu();
-		if (ai_1.s_call != -1)
-		{
-			if (ai_1.s_call == 3)
-			{
-				human.s_call = 0;
-				ai_2.s_call = 0;
-			}
-			else
-				ai_2.isCallingDizhu = true;
-		}
-		if (ai_2.isCallingDizhu && ai_2.s_call == -1)
-			ai_2.callDizhu();
-		if (ai_2.s_call != -1)
-		{
-			if (ai_2.s_call == 3)
-			{
-				human.s_call = 0;
-				ai_1.s_call = 0;
-			}
-			else
-				human.isCallingDizhu = true;
-		}
-		if (human.s_call != -1 && ai_1.s_call != -1 && ai_2.s_call != -1)
-		{
-			human.isCallingDizhu = false;
-			ai_1.isCallingDizhu = false;
-			ai_2.isCallingDizhu = false;
-			if (human.s_call == 0 && ai_1.s_call == 0 && ai_2.s_call == 0)
-			{
-				bool_list["isDealing"] = true;
-				bool_list["isDealDizhu"] = false;
-				human.s_call = -1;
-				ai_1.s_call = -1;
-				ai_2.s_call = -1;
-				score = 0;
-			}
-			else
-			{
-				score = (human.s_call + ai_1.s_call + ai_2.s_call) * 10;
-				if (human.s_call >= ai_1.s_call && human.s_call >= ai_2.s_call)
-				{
-					human.sid = DIZHU;
-					ai_1.sid = NONM;
-					ai_2.sid = NONM;
-				}
-				else if (ai_1.s_call >= human.s_call && ai_1.s_call >= ai_2.s_call)
-				{
-					ai_1.sid = DIZHU;
-					human.sid = NONM;
-					ai_2.sid = NONM;
-				}
-				else if (ai_2.s_call >= human.s_call && ai_2.s_call >= ai_1.s_call)
-				{
-					ai_2.sid = DIZHU;
-					human.sid = NONM;
-					ai_1.sid = NONM;
-				}
-				if (!clock_showCall.isRun)
-					clock_showCall.start();
-				clock_showCall.update();
-				if (clock_showCall.second >= 1)
-				{
-					clock_showCall.stop();
-					bool_list["isDealDizhu"] = false;
-					bool_list["isPlaying"] = true;
-					puke_manager.deal_dizhuCard();
-				}
-			}
-		}
+		if (human_self.isCallingDizhu && human_self.s_call == -1)
+			human_self.callDizhu(e);
 	}
 	//出牌阶段
-	if (human.isMyTime)
+	if (human_self.isMyTime)
 	{
-		if (human.clock_daojishi.second > 30)
+		if (human_self.clock_daojishi.second > 30)
 		{
-			human.dec = PASS;
-			human.isMyTime = false;
-			ai_1.isMyTime = true;
-			human.clock_daojishi.stop();
+			human_self.dec = PASS;
+			::pt::DaCallDec dcd;
+			dcd.s_call = 0;
+			while (!connector.sendNetworkEvent(::pt::daCallDec, dcd))
+				::std::cout << "连接中......\n";
+			human_self.isMyTime = false;
+			human_self.clock_daojishi.stop();
 		}
 		else
 		{
-			if (!human.clock_daojishi.isRun)
-				human.clock_daojishi.start();
-			human.clock_daojishi.update();
-			human.tDaojishi.setString(std::to_string(30 - human.clock_daojishi.second));
-			human.dec = NOT;
-			if (human.bt_chupai.onClick(e))
+			human_self.clock_daojishi.update();
+			human_self.tDaojishi.setString(std::to_string(30 - human_self.clock_daojishi.second));
+			human_self.dec = NOT;
+			if (human_self.bt_chupai.onClick(e))
 			{
 				for (int i = 0; i < 14; i++)
 				{
@@ -1769,91 +1761,24 @@ void GameSceneOL::player_turn_input(Event& e)
 					{
 						if (puke_manager.puke.c[i][j].isSeleted)
 						{
-							puke_manager.addToJudge(i, j);
+							puke_manager.addToJudge(i * 4 + j);
 						}
 					}
 				}
-				PukeType type = illegal;
-				puke_manager.JudgeCard(human, type);
-				if (type == rocket)
-					score *= 4;
-				else if (type == bomb)
-					score *= 2;
-				if (human.dec != NOT)
-				{
-					ai_1.isMyTime = true;
-					human.clock_daojishi.stop();
-				}
+				if (puke_manager.handSeletedCard())
+					human_self.clock_daojishi.stop();
 			}
-			else if (human.bt_pass.onClick(e))
+			else if (human_self.bt_pass.onClick(e))
 			{
-				human.dec = PASS;
-				human.isMyTime = false;
-				ai_1.isMyTime = true;
-				human.clock_daojishi.stop();
+				human_self.dec = PASS;
+				::pt::DaCallDec dcd;
+				dcd.s_call = 0;
+				while (!connector.sendNetworkEvent(::pt::daCallDec, dcd))
+					::std::cout << "连接中......\n";
+				human_self.isMyTime = false;
+				human_self.clock_daojishi.stop();
 			}
 		}
-	}
-	else if (ai_1.isMyTime)
-	{
-		PukeType type = illegal;
-		puke_manager.autoSeleteCard(&ai_1, type);
-		if (type == rocket)
-			score *= 4;
-		else if (type == bomb)
-			score *= 2;
-		if (!ai_1.isMyTime)
-			ai_2.isMyTime = true;
-	}
-	else if (ai_2.isMyTime)
-	{
-		PukeType type = illegal;
-		puke_manager.autoSeleteCard(&ai_2, type);
-		if (type == rocket)
-			score *= 4;
-		else if (type == bomb)
-			score *= 2;
-		if (!ai_2.isMyTime)
-			human.isMyTime = true;
-	}
-}
-
-void GameSceneOL::input_rhythm(Event& e)
-{
-	if (e.type == Event::KeyPressed)
-	{
-		sound_get.play();
-		if (e.key.code == Keyboard::F)
-		{
-			sF.setColor(Color(255, 255, 255, 125));
-			puke_manager.getCard_rhythm(0);
-		}
-		if (e.key.code == Keyboard::G)
-		{
-			sG.setColor(Color(255, 255, 255, 125));
-			puke_manager.getCard_rhythm(1);
-		}
-		if (e.key.code == Keyboard::H)
-		{
-			sH.setColor(Color(255, 255, 255, 125));
-			puke_manager.getCard_rhythm(2);
-		}
-		if (e.key.code == Keyboard::J)
-		{
-			sJ.setColor(Color(255, 255, 255, 125));
-			puke_manager.getCard_rhythm(3);
-		}
-	}
-	if (e.type == Event::KeyReleased)
-	{
-		if (e.key.code == Keyboard::F)
-			sF.setColor(Color(255, 255, 255, 255));
-		if (e.key.code == Keyboard::G)
-			sG.setColor(Color(255, 255, 255, 255));
-		if (e.key.code == Keyboard::H)
-			sH.setColor(Color(255, 255, 255, 255));
-		if (e.key.code == Keyboard::J)
-			sJ.setColor(Color(255, 255, 255, 255));
 	}
 }
 
@@ -1871,53 +1796,24 @@ void GameSceneOL::Input(Event& e)
 			input_exit(e);
 		else
 		{
-			if (e.type == Event::KeyReleased && e.key.code == Keyboard::Tab)
+			if (e.type == Event::MouseButtonPressed && e.key.code == Mouse::Left)
 			{
-				puke_manager.isGunCharm = !puke_manager.isGunCharm;
-				if (!bool_list["isShooted"])
-					bool_list["isShooted"] = true;
-				if (puke_manager.isGunCharm)
-				{
-					clock_shoot.restart();
-					puke_manager.gunCharm.start();
-				}
+				mouseRect.isMousePressed = true;
+				px1 = Mouse::getPosition(*app).x;
+				py1 = Mouse::getPosition(*app).y;
 			}
-			if (!isRhythm)
+			if (mouseRect.isMousePressed)
 			{
-				if (e.type == Event::MouseButtonPressed && e.key.code == Mouse::Left)
-				{
-					mouseRect.isMousePressed = true;
-					px1 = Mouse::getPosition(*app).x;
-					py1 = Mouse::getPosition(*app).y;
-				}
-				if (mouseRect.isMousePressed)
-				{
-					px2 = Mouse::getPosition(*app).x;
-					py2 = Mouse::getPosition(*app).y;
-				}
-				if (e.type == Event::MouseButtonReleased && e.key.code == Mouse::Left)
-					mouseRect.isMousePressed = false;
-				for (int i = 0; i < 14; i++)
-					for (int j = 0; j < 4; j++)
-						puke_manager.puke.c[i][j].onClick(e);
+				px2 = Mouse::getPosition(*app).x;
+				py2 = Mouse::getPosition(*app).y;
 			}
+			if (e.type == Event::MouseButtonReleased && e.key.code == Mouse::Left)
+				mouseRect.isMousePressed = false;
+			for (int i = 0; i < 14; i++)
+				for (int j = 0; j < 4; j++)
+					puke_manager.puke.c[i][j].onClick(e);
 			player_turn_input(e);
-			if (puke_manager.num_desk > 0 && puke_manager.isGunCharm)
-			{
-				for (int i = puke_manager.num_desk - 1; i >= 0; i--)
-				{
-					int k = puke_manager.deskCard[i] / 4;
-					int l = puke_manager.deskCard[i] % 4;
-					if (puke_manager.puke.c[k][l].onShooted(app, e))
-					{
-						puke_manager.removeFromDesk(i);
-						break;
-					}
-				}
-			}
 		}
-		if (isRhythm && bool_list["isDealing"])
-			input_rhythm(e);
 	}
 	if (bool_list["isShowOver"])
 	{
@@ -1929,7 +1825,12 @@ void GameSceneOL::Input(Event& e)
 	else
 	{
 		if (bt_exit.onClick(e))
+		{
 			bool_list["isExit"] = true;
+			::pt::ReExitRoom rer;
+			while(!connector.sendNetworkEvent(::pt::reExitRoom, rer))
+				::std::cout << "连接中......\n";
+		}
 	}
 }
 

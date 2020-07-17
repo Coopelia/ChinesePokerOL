@@ -2,113 +2,18 @@
 
 namespace pt
 {
-	NetworkEvent::NetworkEvent(MSG_TYPE type) : _type(type)
+	NetworkEvent::NetworkEvent(MSG_TYPE type)
 	{
+		this->_type = type;
 	}
 
 	NetworkEvent::~NetworkEvent()
 	{
 	}
 
-	NetworkEvent* NetworkEvent::makeFromPacket(sf::Packet& packet)
+	::pt::MSG_TYPE NetworkEvent::type() const
 	{
-		sf::Uint8 id;
-		NetworkEvent* res = nullptr;
-		packet >> id;
-		switch (id)
-		{
-		case IdDisconnected:
-		{
-			res = new Disconnected();
-			packet >> (*static_cast<Disconnected*>(res));
-		}break;
-		case IdLogOut:
-		{
-			res = new LogOut();
-			packet >> (*static_cast<LogOut*>(res));
-		}break;
-		case IdGetListGame:
-		{
-			res = new GetListGame();
-			packet >> (*static_cast<GetListGame*>(res));
-		}break;
-		case IdSetListGame:
-		{
-			res = new SetListGame();
-			packet >> (*static_cast<SetListGame*>(res));
-		}break;
-		case IdCreateGame:
-		{
-			res = new CreateGame();
-			packet >> (*static_cast<CreateGame*>(res));
-		}break;
-		case IdJoinGame:
-		{
-			res = new JoinGame();
-			packet >> (*static_cast<JoinGame*>(res));
-		}break;
-		case IdJoinGameConfirmation:
-		{
-			res = new JoinGameConfirmation();
-			packet >> (*static_cast<JoinGameConfirmation*>(res));
-		}break;
-		case FuncIds::IdJoinGameReject:
-		{
-			res = new JoinGameReject();
-			packet >> (*static_cast<JoinGameReject*>(res));
-		}break;
-		case FuncIds::IdRequestCreateEntity:
-		{
-			res = new RequestCreateEntity();
-			packet >> (*static_cast<RequestCreateEntity*>(res));
-		}break;
-		case FuncIds::IdRequestDestroyEntity:
-		{
-			res = new RequestDestroyEntity();
-			packet >> (*static_cast<RequestDestroyEntity*>(res));
-		}break;
-		case FuncIds::IdDestroyEntity:
-		{
-			res = new DestroyEntity();
-			packet >> (*static_cast<DestroyEntity*>(res));
-		}break;
-		case FuncIds::IdCreateEntity:
-		{
-			res = new CreateEntity();
-			packet >> (*static_cast<CreateEntity*>(res));
-
-		}break;
-		case FuncIds::IdUpdateEntity:
-		{
-			res = new UpdateEntity();
-			packet >> (*static_cast<UpdateEntity*>(res));
-		}break;
-		case FuncIds::IdOnHittedEntity:
-		{
-			res = new OnHittedEntity();
-			packet >> (*static_cast<OnHittedEntity*>(res));
-		}break;
-		case FuncIds::IdOnHitEntity:
-		{
-			res = new OnHitEntity();
-			packet >> (*static_cast<OnHitEntity*>(res));
-		}break;
-		case FuncIds::IdOnSpawnEntity:
-		{
-			res = new OnSpawnEntity();
-			packet >> (*static_cast<OnSpawnEntity*>(res));
-		}break;
-		case FuncIds::IdUpdateTeam:
-		{
-			res = new UpdateTeam();
-			packet >> (*static_cast<UpdateTeam*>(res));
-		}break;
-		}
-		return res;
-	}
-	FuncIds::FUNCIDS NetworkEvent::type()const
-	{
-		return _type;
+		return this->_type;
 	}
 
 	sf::Packet& operator>>(sf::Packet& packet, NetworkEvent& self)
@@ -122,721 +27,345 @@ namespace pt
 		return packet;
 	}
 
-	////////////////////// Disconnected ////////////////////
-
-	Disconnected::Disconnected() : NetworkEvent(FuncIds::IdDisconnected)
+	////////////////////// reConnect ////////////////////
+	ReConnect::ReConnect() :NetworkEvent(::pt::reConnect)
 	{
 	}
 
-	//////////////////// LogOut /////////////////////////////////
-
-	LogOut::LogOut() : NetworkEvent(FuncIds::IdLogOut)
+	////////////////////// reDisconnect ////////////////////
+	ReDisconnect::ReDisconnect() : NetworkEvent(::pt::reDisconnect)
 	{
 	}
 
-
-	////////////////// Get List Game //////////////////////
-
-	GetListGame::GetListGame() : NetworkEvent(FuncIds::IdGetListGame)
+	//////////////////// reGetRoomList /////////////////////////////////
+	ReGetRoomList::ReGetRoomList() : NetworkEvent(::pt::reGetRoomList)
 	{
 	}
 
-	/////////////////////////////// Set List Game ////////////////////
-
-	SetListGame::SetListGame() : NetworkEvent(FuncIds::IdSetListGame)
+	////////////////// reCreatRoom //////////////////////
+	ReCreatRoom::ReCreatRoom() : NetworkEvent(::pt::reCreatRoom)
 	{
 	}
 
-	void SetListGame::add(int id, int players, int teams)
+	/////////////////////////////// reJoinRoom ////////////////////
+	ReJoinRoom::ReJoinRoom() : NetworkEvent(::pt::reJoinRoom)
 	{
-		Game tmp = { .nbTeams = teams,
-			.nbPlayers = players,
-			.id = id };
-
-		_list.emplace_back(std::move(tmp));
 	}
 
-	sf::Packet& operator>>(sf::Packet& packet, SetListGame& self)
+	/////////////////////////////// reReady ////////////////////
+	ReReady::ReReady() : NetworkEvent(::pt::reReady)
 	{
-		sf::Uint32 size;
-		packet >> size;
-		self._list.clear();
-		for (unsigned int i = 0; i < size; ++i)
+	}
+
+	/////////////////////////////// reUnReady ////////////////////
+	ReUnReady::ReUnReady() : NetworkEvent(::pt::reUnReady)
+	{
+	}
+
+	/////////////////////////////// reExitRoom ////////////////////
+	ReExitRoom::ReExitRoom() : NetworkEvent(::pt::reExitRoom)
+	{
+	}
+
+	/////////////////////////////// reClearDeskCard ////////////////////
+	ReClearDeskCard::ReClearDeskCard() : NetworkEvent(::pt::reClearDeskCard)
+	{
+	}
+
+	/////////////////////////////// daCallDec ////////////////////
+	DaCallDec::DaCallDec() : NetworkEvent(::pt::daCallDec)
+	{
+	}
+
+	sf::Packet& operator>>(sf::Packet& packet, DaCallDec& self)
+	{
+		packet >> self.s_call;
+		return packet;
+	}
+
+	sf::Packet& operator<<(sf::Packet& packet, DaCallDec& self)
+	{
+		packet << ::sf::Uint8(self.s_call);
+		return packet;
+	}
+
+	/////////////////////////////// daChuDec ////////////////////
+	DaChuDec::DaChuDec() :NetworkEvent(::pt::daChuDec)
+	{
+	}
+
+	sf::Packet& operator>>(sf::Packet& packet, DaChuDec& self)
+	{
+		::sf::Uint8 t;
+		packet >> t;
+		self.dec = DEC(t);
+		int i;
+		while (!packet.endOfPacket())
 		{
-			sf::Int32 id;
-			sf::Int32 teams;
-			sf::Int32 players;
-
-			packet >> id
-				>> teams
-				>> players;
-
-			SetListGame::Game game = { .nbTeams = teams,
-				.nbPlayers = players,
-				.id = id };
-
-			self._list.emplace_back(std::move(game));
-
+			packet >> i;
+			self.cards.push_back(i);
 		}
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, const SetListGame& self)
+	sf::Packet& operator<<(sf::Packet& packet, DaChuDec& self)
 	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._list.size());
+		packet << ::sf::Uint8(self.dec);
+		for (auto p : self.cards)
+			packet << p;
+		return packet;
+	}
 
-		for (const SetListGame::Game& game : self._list)
+	/////////////////////////////// daGameState ////////////////////
+	DaGameState::DaGameState() :NetworkEvent(::pt::daGameOver)
+	{
+	}
+
+	sf::Packet& operator>>(sf::Packet& packet, DaGameState& self)
+	{
+		::sf::Uint8 t;
+		packet >> t;
+		self.gsta = (GameSta)t;
+		return packet;
+	}
+
+	sf::Packet& operator<<(sf::Packet& packet, DaGameState& self)
+	{
+		packet << ::sf::Uint8(self.gsta);
+		return packet;
+	}
+
+	/////////////////////////////// daPlayerStateInfo_Ready ////////////////////
+	DaPlayerStateInfo_Ready::DaPlayerStateInfo_Ready() :NetworkEvent(::pt::daPlayerStateInfo_Ready)
+	{
+	}
+
+	sf::Packet& operator>>(sf::Packet& packet, DaPlayerStateInfo_Ready& self)
+	{
+		::std::pair<int, bool> t;
+		while (!packet.endOfPacket())
 		{
-			packet << sf::Int32(game.id)
-				<< sf::Int32(game.nbTeams)
-				<< sf::Int32(game.nbPlayers);
+			packet >> t.first >> t.second;
+			self.isReady.push_back(t);
 		}
 		return packet;
 	}
 
-	const std::list<SetListGame::Game>& SetListGame::list()const
+	sf::Packet& operator<<(sf::Packet& packet, DaPlayerStateInfo_Ready& self)
 	{
-		return _list;
-	}
-
-	////////////////// Create game /////////////////
-	CreateGame::CreateGame() : NetworkEvent(FuncIds::IdCreateGame)
-	{
-	}
-
-	//////////////// Join Game ////////////////
-
-	JoinGame::JoinGame() : NetworkEvent(FuncIds::IdJoinGame), _gameId(-1)
-	{
-	}
-
-	JoinGame::JoinGame(int gameId) : NetworkEvent(FuncIds::IdJoinGame), _gameId(gameId)
-	{
-	}
-
-	int JoinGame::gameId()const
-	{
-		return _gameId;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const JoinGame& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Int32(self._gameId);
+		for (int i = 0; i < self.isReady.size(); i++)
+			packet << self.isReady[i].first << self.isReady[i].second;
 		return packet;
 	}
 
-	sf::Packet& operator>>(sf::Packet& packet, JoinGame& self)
+	/////////////////////////////// daPlayerStateInfo_Call ////////////////////
+	DaPlayerStateInfo_Call::DaPlayerStateInfo_Call() :NetworkEvent(::pt::daPlayerStateInfo_Call)
 	{
-		sf::Int32 id;
-		packet >> id;
-		self._gameId = id;
+	}
+
+	sf::Packet& operator>>(sf::Packet& packet, DaPlayerStateInfo_Call& self)
+	{
+		packet >> self.player_turned_id >> self.s_call;
 		return packet;
 	}
 
-	/////////////////////// JoinGameConfirmation //////////////////////////
+	sf::Packet& operator<<(sf::Packet& packet, DaPlayerStateInfo_Call& self)
+	{
+		packet << self.player_turned_id << self.s_call;
+		return packet;
+	}
 
-	JoinGameConfirmation::JoinGameConfirmation() : NetworkEvent(FuncIds::IdJoinGameConfirmation)
+	/////////////////////////////// daPlayerStateInfo_Chu ////////////////////
+	DaPlayerStateInfo_Chu::DaPlayerStateInfo_Chu() :NetworkEvent(::pt::daPlayerStateInfo_Chu)
 	{
 	}
 
-	JoinGameConfirmation::JoinGameConfirmation(const std::string& mapDatas, int team) : NetworkEvent(FuncIds::IdJoinGameConfirmation), _mapDatas(mapDatas), _teamId(team)
+	sf::Packet& operator>>(sf::Packet& packet, DaPlayerStateInfo_Chu& self)
 	{
-	}
-
-	const std::string& JoinGameConfirmation::getMapDatas()const
-	{
-		return _mapDatas;
-	}
-
-	int JoinGameConfirmation::getTeamId()const
-	{
-		return _teamId;
-	}
-
-	const void JoinGameConfirmation::addTeam(JoinGameConfirmation::Data&& data)
-	{
-		_teamInfo.emplace_back(data);
-	}
-
-	const std::list<JoinGameConfirmation::Data>& JoinGameConfirmation::getTeamInfo()const
-	{
-		return _teamInfo;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, JoinGameConfirmation& self)
-	{
-		self._mapDatas.clear();
-
-		sf::Int32 teamId;
-		sf::Int32 nbTeam;
-
-		packet >> self._mapDatas
-			>> teamId
-			>> nbTeam;
-		self._teamId = teamId;
-
-		self._teamInfo.clear();
-		for (int i = 0; i < nbTeam; ++i)
+		packet >> self.player_turned_id;
+		::sf::Uint8 t;
+		packet >> t;
+		self.dec = DEC(t);
+		::std::pair<::std::pair<int, SF>, ::std::pair<int, ::std::vector<int>>> p;
+		::std::pair<int, SF> a;
+		::std::pair<int, ::std::vector<int>> b;
+		while (!packet.endOfPacket())
 		{
-			sf::Int32 team;
-			sf::Int32 gold;
-			sf::Uint8 r, g, b;
-
-			packet >> team
-				>> gold
-				>> r >> g >> b;
-			JoinGameConfirmation::Data data;
-			data.team = team;
-			data.gold = gold;
-			data.color = sf::Color(r, g, b);
-
-			self._teamInfo.emplace_back(std::move(data));
-		}
-
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const JoinGameConfirmation& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< self._mapDatas
-			<< sf::Int32(self._teamId)
-			<< sf::Int32(self._teamInfo.size());
-		for (const JoinGameConfirmation::Data& data : self._teamInfo)
-		{
-			packet << sf::Int32(data.team)
-				<< sf::Int32(data.gold)
-				<< sf::Uint8(data.color.r)
-				<< sf::Uint8(data.color.g)
-				<< sf::Uint8(data.color.b);
-		}
-
-		return packet;
-	}
-
-	////////////////////// JoinGameReject ///////////////////////
-
-	JoinGameReject::JoinGameReject() : NetworkEvent(FuncIds::IdJoinGameReject), _gameId(-1)
-	{
-	}
-
-	JoinGameReject::JoinGameReject(int id) : NetworkEvent(FuncIds::IdJoinGameReject), _gameId(id)
-	{
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, JoinGameReject& self)
-	{
-		sf::Int32 id;
-		packet >> id;
-		self._gameId = id;
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const JoinGameReject& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Int32(self._gameId);
-		return packet;
-	}
-
-	//////////////////// RequestCreateEntity /////////////////////
-
-	RequestCreateEntity::RequestCreateEntity() : NetworkEvent(FuncIds::IdRequestCreateEntity)
-	{
-	}
-
-	RequestCreateEntity::RequestCreateEntity(short int type, const sf::Vector2i& coord) : NetworkEvent(FuncIds::IdRequestCreateEntity), _entitytype(type), _coord(coord)
-	{
-	}
-
-	short int RequestCreateEntity::getType()const
-	{
-		return _entitytype;
-	}
-
-	const sf::Vector2i& RequestCreateEntity::getCoord()const
-	{
-		return _coord;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, RequestCreateEntity& self)
-	{
-		sf::Int8 type;
-		sf::Int32 x, y;
-
-		packet >> type
-			>> x
-			>> y;
-
-		self._entitytype = type;
-		self._coord.x = x;
-		self._coord.y = y;
-
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const RequestCreateEntity& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Int8(self._entitytype)
-			<< sf::Int32(self._coord.x)
-			<< sf::Int32(self._coord.y);
-		return packet;
-	}
-
-
-	///////////////////////// RequestDestroyEntity ///////////////////
-
-	RequestDestroyEntity::RequestDestroyEntity() : NetworkEvent(FuncIds::IdRequestDestroyEntity)
-	{
-	}
-
-	RequestDestroyEntity::RequestDestroyEntity(unsigned int id) : NetworkEvent(FuncIds::IdRequestDestroyEntity), _id(id)
-	{
-	}
-
-	unsigned int RequestDestroyEntity::getId()const
-	{
-		return _id;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, RequestDestroyEntity& self)
-	{
-		sf::Uint32 id;
-		packet >> id;
-		self._id = id;
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const RequestDestroyEntity& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._id);
-		return packet;
-	}
-
-
-	//////////////////////////// DestroyEntity /////////////////////
-
-	DestroyEntity::DestroyEntity() : NetworkEvent(FuncIds::IdDestroyEntity)
-	{
-	}
-
-	void DestroyEntity::add(unsigned int id)
-	{
-		_updates.emplace_back(id);
-	}
-
-	const std::list<unsigned int>& DestroyEntity::getDestroy()const
-	{
-		return _updates;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, DestroyEntity& self)
-	{
-		sf::Uint32 size;
-		packet >> size;
-		self._updates.clear();
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			sf::Uint32 entityId;
-			packet >> entityId;
-			self._updates.emplace_back(entityId);
+			packet >> a.first;
+			packet >> t;
+			a.second = (SF)t;
+			packet >> b.first;
+			for (int i = 0; i < b.first; i++)
+			{
+				packet >> t;
+				b.second.push_back(t);
+			}
+			p.first = a;
+			p.second = b;
+			self.playerInfo.push_back(p);
 		}
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, const DestroyEntity& self)
+	sf::Packet& operator<<(sf::Packet& packet, DaPlayerStateInfo_Chu& self)
 	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (unsigned int id : self._updates)
+		packet << self.player_turned_id;
+		packet << ::sf::Uint8(self.dec);
+		for (auto p : self.playerInfo)
 		{
-			packet << sf::Uint32(id);
+			packet << p.first.first << p.first.second;
+			packet << p.second.first;
+			for (int i = 0; i < p.second.second.size(); i++)
+				packet << p.second.second[i];
 		}
 		return packet;
 	}
 
-	//////////////////////////// CreateEntity /////////////////////
-
-	CreateEntity::CreateEntity() : NetworkEvent(FuncIds::IdCreateEntity)
+	/////////////////////////////// daBeishu ////////////////////
+	DaBeishu::DaBeishu() :NetworkEvent(::pt::daBeishu)
 	{
 	}
 
-	void CreateEntity::add(CreateEntity::Data&& update)
+	sf::Packet& operator>>(sf::Packet& packet, DaBeishu& self)
 	{
-		_updates.emplace_back(update);
+		packet >> self.beishu;
+		return packet;
 	}
 
-	const std::list<CreateEntity::Data>& CreateEntity::getCreates()const
+	sf::Packet& operator<<(sf::Packet& packet, DaBeishu& self)
 	{
-		return _updates;
+		packet << self.beishu;
+		return packet;
 	}
 
-	void CreateEntity::clear()
+	/////////////////////////////// daDizhuCard ////////////////////
+	DaDizhuCard::DaDizhuCard() :NetworkEvent(::pt::daDeskCard)
 	{
-		_updates.clear();
 	}
 
-	sf::Packet& operator>>(sf::Packet& packet, CreateEntity& self)
+	sf::Packet& operator>>(sf::Packet& packet, DaDizhuCard& self)
 	{
-		sf::Uint32 size;
-		packet >> size;
-		self._updates.clear();
-		for (unsigned int i = 0; i < size; ++i)
+		int i;
+		while (!packet.endOfPacket())
 		{
-			CreateEntity::Data update;
-			sf::Uint32 entityId;
-			sf::Int8 entityType;
-			sf::Int8 entityTeam;
-			sf::Int8 animationId;
-			sf::Int32 coord_x;
-			sf::Int32 coord_y;
-			sf::Int32 maxHp;
-			sf::Int32 hp;
-
-			packet >> entityId
-				>> entityType
-				>> entityTeam
-				>> animationId
-				>> update.position.x
-				>> update.position.y
-				>> coord_x
-				>> coord_y
-				>> maxHp
-				>> hp;
-
-			update.entityId = entityId;
-			update.entityType = entityType;
-			update.entityTeam = entityTeam;
-			update.animationId = animationId;
-			update.coord.x = coord_x;
-			update.coord.y = coord_y;
-			update.maxHp = maxHp;
-			update.hp = hp;
-
-			self._updates.emplace_back(std::move(update));
-
+			packet >> i;
+			self.cards.push_back(i);
 		}
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, const CreateEntity& self)
+	sf::Packet& operator<<(sf::Packet& packet, DaDizhuCard& self)
 	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (const CreateEntity::Data& update : self._updates)
+		for (int i = 0; i < self.cards.size(); i++)
+			packet << self.cards[i];
+		return packet;
+	}
+
+	/////////////////////////////// daDeskCard ////////////////////
+	DaDeskCard::DaDeskCard() :NetworkEvent(::pt::daDeskCard)
+	{
+	}
+
+	sf::Packet& operator>>(sf::Packet& packet, DaDeskCard& self)
+	{
+		int i;
+		while (!packet.endOfPacket())
 		{
-			packet << sf::Uint32(update.entityId)
-				<< sf::Int8(update.entityType)
-				<< sf::Int8(update.entityTeam)
-				<< sf::Int8(update.animationId)
-				<< update.position.x
-				<< update.position.y
-				<< sf::Int32(update.coord.x)
-				<< sf::Int32(update.coord.y)
-				<< sf::Int32(update.maxHp)
-				<< sf::Int32(update.hp);
+			packet >> i;
+			self.cards.push_back(i);
 		}
 		return packet;
 	}
 
-	//////////////////////////// UpdateEntity /////////////////////
+	sf::Packet& operator<<(sf::Packet& packet, DaDeskCard& self)
+	{
+		for (int i = 0; i < self.cards.size(); i++)
+			packet << self.cards[i];
+		return packet;
+	}
 
-	UpdateEntity::UpdateEntity() : NetworkEvent(FuncIds::IdUpdateEntity)
+	/////////////////////////////// daGameOver ////////////////////
+	DaGameOver::DaGameOver() :NetworkEvent(::pt::daGameOver)
 	{
 	}
 
-	void UpdateEntity::add(UpdateEntity::Data&& update)
+	sf::Packet& operator>>(sf::Packet& packet, DaGameOver& self)
 	{
-		_updates.emplace_back(update);
+		packet >> self.winner_id;
+		return packet;
 	}
 
-	const std::list<UpdateEntity::Data>& UpdateEntity::getUpdates()const
+	sf::Packet& operator<<(sf::Packet& packet, DaGameOver& self)
 	{
-		return _updates;
+		packet << self.winner_id;
+		return packet;
 	}
 
-	void UpdateEntity::clear()
+	/////////////////////////////// daRoomList ////////////////////
+	DaRoomList::DaRoomList() :NetworkEvent(::pt::daRoomList)
 	{
-		_updates.clear();
 	}
 
-	sf::Packet& operator>>(sf::Packet& packet, UpdateEntity& self)
+	sf::Packet& operator>>(sf::Packet& packet, DaRoomList& self)
 	{
-		sf::Uint32 size;
-		packet >> size;
-		self._updates.clear();
-		for (unsigned int i = 0; i < size; ++i)
+		Room room;
+		int t;
+		bool f;
+		while (!packet.endOfPacket())
 		{
-			UpdateEntity::Data update;
-			sf::Uint32 entityId;
-			sf::Int8 animationId;
-			sf::Int32 coord_x;
-			sf::Int32 coord_y;
-			sf::Int32 hp;
-
-			packet >> entityId
-				>> animationId
-				>> update.position.x
-				>> update.position.y
-				>> coord_x
-				>> coord_y
-				>> hp;
-
-			update.entityId = entityId;
-			update.animationId = animationId;
-			update.coord.x = coord_x;
-			update.coord.y = coord_y;
-
-			update.hp = hp;
-
-			self._updates.emplace_back(std::move(update));
-
+			packet >> t;
+			room.setID(t);
+			packet >> f;
+			room.setState(f);
+			packet >> t;
+			room.setNum(t);
+			for (int i = 0; i < room.getNum(); i++)
+			{
+				packet >> t;
+				room.addPlayer(t);
+			}
+			self.room.push_back(room);
 		}
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, const UpdateEntity& self)
+	sf::Packet& operator<<(sf::Packet& packet, DaRoomList& self)
 	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (const UpdateEntity::Data& update : self._updates)
+		int num;
+		::std::vector<int> pid;
+		for (auto p : self.room)
 		{
-			packet << sf::Uint32(update.entityId)
-				<< sf::Int8(update.animationId)
-				<< update.position.x
-				<< update.position.y
-				<< sf::Int32(update.coord.x)
-				<< sf::Int32(update.coord.y)
-				<< sf::Int32(update.hp);
+			num = p.getNum();
+			pid = p.getPlayersId();
+			packet << p.getID() << p.getState() << num;
+			for (int i = 0; i < num; i++)
+				packet << pid[i];
 		}
 		return packet;
 	}
 
-	///////////////////////// OnHittedEntity ///////////////////
-
-	OnHittedEntity::OnHittedEntity() : NetworkEvent(FuncIds::IdOnHittedEntity)
+	/////////////////////////////// daDealCard ////////////////////
+	DaDealCard::DaDealCard() :NetworkEvent(::pt::daDealCard)
 	{
 	}
 
-	void OnHittedEntity::add(OnHittedEntity::Data&& data)
+	sf::Packet& operator>>(sf::Packet& packet, DaDealCard& self)
 	{
-		_updates.emplace_back(data);
-	}
-
-	const std::list<OnHittedEntity::Data>& OnHittedEntity::getHitted()const
-	{
-		return _updates;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, OnHittedEntity& self)
-	{
-		self._updates.clear();
-		sf::Uint32 size;
-		packet >> size;
-		for (unsigned int i = 0; i < size; ++i)
+		packet >> self.playerId;
+		int a;
+		while (!packet.endOfPacket())
 		{
-			sf::Uint32 id;
-			sf::Int32 x, y, ex, ey;
-			sf::Uint32 enemyId;
-			packet >> id
-				>> x
-				>> y
-				>> enemyId
-				>> ex
-				>> ey;
-
-			OnHittedEntity::Data data;
-
-			data.entityId = id;
-			data.entityCoord.x = x;
-			data.entityCoord.y = y;
-			data.enemyId = enemyId;
-			data.entityCoord.x = ex;
-			data.entityCoord.y = ey;
-
-			self.add(std::move(data));
-		}
-
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const OnHittedEntity& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (const OnHittedEntity::Data& data : self._updates)
-		{
-			packet << sf::Uint32(data.entityId)
-				<< sf::Int32(data.entityCoord.x)
-				<< sf::Int32(data.entityCoord.y)
-				<< sf::Uint32(data.enemyId)
-				<< sf::Int32(data.entityCoord.x)
-				<< sf::Int32(data.entityCoord.y);
+			packet >> a;
+			self.cards.push_back(a);
 		}
 		return packet;
 	}
 
-	///////////////////////// OnHitEntity ///////////////////
-
-	OnHitEntity::OnHitEntity() : NetworkEvent(FuncIds::IdOnHitEntity)
+	sf::Packet& operator<<(sf::Packet& packet, DaDealCard& self)
 	{
-	}
-
-	void OnHitEntity::add(OnHitEntity::Data&& data)
-	{
-		_updates.emplace_back(data);
-	}
-
-	const std::list<OnHitEntity::Data>& OnHitEntity::getHit()const
-	{
-		return _updates;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, OnHitEntity& self)
-	{
-		self._updates.clear();
-		sf::Uint32 size;
-		packet >> size;
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			sf::Uint32 id;
-			sf::Int32 x, y, ex, ey;
-			sf::Uint32 enemyId;
-			packet >> id
-				>> x
-				>> y
-				>> enemyId
-				>> ex
-				>> ey;
-
-			OnHitEntity::Data data;
-
-			data.entityId = id;
-			data.entityCoord.x = x;
-			data.entityCoord.y = y;
-			data.enemyId = enemyId;
-			data.entityCoord.x = ex;
-			data.entityCoord.y = ey;
-
-			self.add(std::move(data));
-		}
-
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const OnHitEntity& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (const OnHitEntity::Data& data : self._updates)
-		{
-			packet << sf::Uint32(data.entityId)
-				<< sf::Int32(data.entityCoord.x)
-				<< sf::Int32(data.entityCoord.y)
-				<< sf::Uint32(data.enemyId)
-				<< sf::Int32(data.entityCoord.x)
-				<< sf::Int32(data.entityCoord.y);
-		}
-		return packet;
-	}
-
-
-	///////////////////////// OnSpawnEntity ///////////////////
-
-	OnSpawnEntity::OnSpawnEntity() : NetworkEvent(FuncIds::IdOnSpawnEntity)
-	{
-	}
-
-	void OnSpawnEntity::add(unsigned int id)
-	{
-		_updates.emplace_back(id);
-	}
-
-	const std::list<unsigned int>& OnSpawnEntity::getSpawn()const
-	{
-		return _updates;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, OnSpawnEntity& self)
-	{
-		self._updates.clear();
-		sf::Uint32 size;
-		packet >> size;
-		for (unsigned int i = 0; i < size; ++i)
-		{
-			sf::Uint32 id;
-			packet >> id;
-			self.add(id);
-		}
-
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const OnSpawnEntity& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (unsigned int id : self._updates)
-			packet << sf::Uint32(id);
-		return packet;
-	}
-
-
-	////////////////////// UpdateTeam ///////////////////////////////
-
-	UpdateTeam::UpdateTeam() : NetworkEvent(FuncIds::IdUpdateTeam)
-	{
-	}
-
-	void UpdateTeam::add(UpdateTeam::Data&& data)
-	{
-		_updates.emplace_back(data);
-	}
-
-	const std::list<UpdateTeam::Data>& UpdateTeam::getUpdates()const
-	{
-		return _updates;
-	}
-
-	sf::Packet& operator>>(sf::Packet& packet, UpdateTeam& self)
-	{
-		self._updates.clear();
-		sf::Int32 size;
-		packet >> size;
-		for (int i = 0; i < size; ++i)
-		{
-			sf::Int32 team;
-			sf::Uint8 gameOver;
-			sf::Int32 gold;
-			packet >> team
-				>> gameOver
-				>> gold;
-
-			UpdateTeam::Data data;
-			data.team = team;
-			data.gameOver = gameOver;
-			data.gold = gold;
-
-			self._updates.emplace_back(std::move(data));
-		}
-
-		return packet;
-	}
-
-	sf::Packet& operator<<(sf::Packet& packet, const UpdateTeam& self)
-	{
-		packet << sf::Uint8(self._type)
-			<< sf::Uint32(self._updates.size());
-		for (const UpdateTeam::Data& data : self._updates)
-		{
-			packet << sf::Uint32(data.team)
-				<< sf::Uint8(data.gameOver)
-				<< sf::Int32(data.gold);
-		}
+		packet << self.playerId;
+		for (int i = 0; i < self.cards.size(); i++)
+			packet << self.cards[i];
 		return packet;
 	}
 }

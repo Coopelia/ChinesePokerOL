@@ -147,23 +147,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Button.h" />
-    <ClInclude Include="Connection.hpp" />
+    <ClInclude Include="Connection.h" />
     <ClInclude Include="Def.h" />
     <ClInclude Include="DFSCard.h" />
-    <ClInclude Include="MsgType.hpp" />
     <ClInclude Include="game.h" />
     <ClInclude Include="GunCharm.h" />
     <ClInclude Include="Mail.h" />
     <ClInclude Include="MouseRectIn.h" />
     <ClInclude Include="MyClock.h" />
     <ClInclude Include="OLPukeManager.h" />
-    <ClInclude Include="Packet.hpp" />
+    <ClInclude Include="PacketType.hpp" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="puke.h" />
     <ClInclude Include="PukeManager.h" />
-    <ClInclude Include="random.hpp" />
     <ClInclude Include="RhythmCharm.h" />
     <ClInclude Include="Room.h" />
+    <ClInclude Include="RoomGUI.h" />
     <ClInclude Include="scene.h" />
   </ItemGroup>
   <ItemGroup>
@@ -176,14 +175,17 @@
     <ClCompile Include="Mail.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MouseRectIn.cpp" />
+    <ClCompile Include="MsgQueue.cpp" />
+    <ClCompile Include="MsgQueue.h" />
     <ClCompile Include="MyClock.cpp" />
     <ClCompile Include="OLPukeManager.cpp" />
-    <ClCompile Include="Packet.cpp" />
+    <ClCompile Include="PacketType.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="puke.cpp" />
     <ClCompile Include="PukeManager.cpp" />
     <ClCompile Include="RhythmCharm.cpp" />
     <ClCompile Include="Room.cpp" />
+    <ClCompile Include="RoomGUI.cpp" />
     <ClCompile Include="scene.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

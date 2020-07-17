@@ -5,10 +5,11 @@
 #include"PukeManager.h"
 #include"OLPukeManager.h"
 #include"Mail.h"
+#include"RoomGUI.h"
 
 enum SceneType
 {
-	single,
+	danji,
 	oline
 };
 
@@ -36,6 +37,12 @@ public:
 	Button bt_exit_ok, bt_exit_cancel;
 	void input_exit(Event& e);
 	void draw_exit(RenderWindow* app);
+	//连接出错对话框
+	Sprite sBack_error;
+	Texture tBack_error;
+	Button bt_error_ok;
+	void input_error(RenderWindow* app, Event& e);
+	void draw_error(RenderWindow* app);
 
 	Scene();
 	virtual ~Scene() {};
@@ -61,7 +68,7 @@ public:
 	void Draw();//绘制主函数
 	void SceneClose();//关闭场景
 	SceneType next_scene;//下一个场景类型
-	Button bt_Enter, bt_join, bt_creat, bt_fankui, bt_store, bt_wanfa, bt_mail, bt_zhanji, bt_exit, bt_setting;
+	Button bt_Enter, bt_creat, bt_fankui, bt_store, bt_wanfa, bt_mail, bt_zhanji, bt_exit, bt_setting;
 	Sprite sMeinv, sBackUser, sUserHead, sJf, sRankList, sBack_menu;
 	Texture tMeinv, tBackUser, tUserHead, tJf, tRankList, tBack_menu;
 	Text text_jb;
@@ -99,6 +106,11 @@ public:
 	Button bt_store_close;
 	void input_store(Event& e);
 	void draw_store();
+	//加入游戏
+	RoomGUI room_menu;
+	Button bt_join, bt_join_exit;
+	void input_join(Event& e);
+	void draw_join();
 };
 
 class GameScene: public Scene //派生出游戏场景类（单机）
@@ -147,11 +159,8 @@ public:
 	Sound sound_get;
 	SoundBuffer sb_get;
 	int score;
-	int elapsTime_shoot;
-	int totalTime_shoot;
 	Music mu_over;
 	MyClock clock_showCall;//出牌倒计时
-	Clock clock_shoot;
 	GameSceneOL();
 	void Initial_window(RenderWindow* app);
 	void Initial_assets();//加载素材
@@ -161,7 +170,7 @@ public:
 	void Draw();//绘制主函数
 	void SceneClose();//关闭场景
 	void player_turn_input(Event& e);//玩家轮流出牌和叫地主
-	void input_rhythm(Event& e); //节奏模式输入
 private:
 	RenderWindow* app;
+	int player_turned_id;
 };
