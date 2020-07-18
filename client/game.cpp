@@ -20,7 +20,7 @@ Game::Game()
 
 Game::~Game()
 {
-	delete this->app;
+	delete app;
 }
 
 void Game::InitialGameScene()
@@ -58,6 +58,8 @@ void Game::Update()
 {
 	if (OnStartScene)
 	{
+		if (start_scene.bool_list["GameExit"])
+			isExit = true;
 		if (start_scene.bool_list["isExit"])
 		{
 			OnStartScene = false;
@@ -130,8 +132,12 @@ void Game::Run()
 		app->clear();
 		Event e;
 		(*app).pollEvent(e);
-		if (e.type == Event::Closed)
+		if (e.type == Event::Closed || isExit)
+		{
+			connector.disconnect();
 			(*app).close();
+			return;
+		}
 		if (e.type == Event::KeyPressed && e.key.code == Keyboard::Space)
 			isOnWel = false;
 		if (isOnWel)
@@ -152,15 +158,20 @@ void Game::Run()
 
 void Game::sender()
 {
-	while (true)
+	while (!isExit)
 	{
-		while (!q_sender.empty())
+		while (!q_sender.empty()&& connector.isConnected)
 			connector.sendEvent();
 	}
+	return;
 }
 
 void Game::reciever()
 {
-	while (true)
-		connector.receiveEvent();
+	while (!isExit)
+	{
+		if (connector.isConnected)
+			connector.receiveEvent();
+	}
+	return;
 }

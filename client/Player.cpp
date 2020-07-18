@@ -181,6 +181,7 @@ Player::Player()
 	sid = NO;
 	isMyTime = false;
 	isCallingDizhu = false;
+	isReady = true;
 	num_card = 0;
 	for (int i = 0; i < 20; i++)
 	{
@@ -227,7 +228,9 @@ void Player::Initial(RenderWindow* app)
 
 void Player::callDizhu(Event& e)
 {
-	if (bt_callThree.onClick(e))
+	if (clock_daojishi.second > 30)
+		s_call = 0;
+	else if (bt_callThree.onClick(e))
 		s_call = 3;
 	else if (bt_callTwo.onClick(e))
 		s_call = 2;
@@ -238,7 +241,18 @@ void Player::callDizhu(Event& e)
 	else
 		s_call = -1;
 	if (s_call != -1)
+	{
 		isCallingDizhu = false;
+		::pt::DaCallDec dcd;
+		dcd.s_call = s_call;
+		while (!connector.sendNetworkEvent(::pt::daCallDec, dcd))
+			::std::cout << "sending......\n";
+	}
+	else
+	{
+		clock_daojishi.update();
+		tDaojishi.setString(std::to_string(30 - clock_daojishi.second));
+	}
 }
 
 void Player::show()

@@ -10,6 +10,7 @@ int py2 = 0;
 int roomId = -1;
 bool isRhythm = false;
 bool isLoading = true;
+bool isExit = false;
 
 void LoadAnim()
 {
@@ -23,7 +24,7 @@ void LoadAnim()
 	s.setPosition(180, 180);
 	Clock cl;
 	float et = 0;
-	while (true)
+	while (!isExit)
 	{
 		if (isLoading)
 		{

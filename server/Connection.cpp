@@ -1,136 +1,77 @@
-#include <SFML-Book/common/Connection.hpp>
+#include"Connection.h"
+#include"Customor.h"
 
-#include <SFML-Book/common/Packet.hpp>
-
-#include <iostream>
-
-namespace book
+Connection::Connection()
 {
+	port_self = 5678;
+	listener.listen(port_self);
+	clientIdTurn = 1;
+	stop = false;
+}
 
-    int Connection::_numberOfCreations = 0;
-    
-    Connection::Connection() :_isRunning(false), _receiveThread(&Connection::_receive,this), _sendThread(&Connection::_send,this),_id(++_numberOfCreations)
-    {
-    }
+void Connection::Stop()
+{
+	this->stop = true;
+	::std::list<Customor*>::iterator itr;
+	mt_c.lock();
+	for (itr = clients.begin(); itr != clients.end();)
+	{
+		(*itr)->disconnect();
+		itr = clients.erase(itr);
+	}
+	mt_c.unlock();
+}
 
-    Connection::~Connection()
-    {
-    }
+void Connection::recieve_new_cust()
+{
+	Customor* c = new Customor();
+	if (listener.accept(c->getSocketIn()) == ::sf::Socket::Done)
+	{
+		::std::cout << "接收到一个新连接: " << c->getSocketIn().getRemoteAddress() << "\n";
+		::sf::Packet p;
+		c->getSocketIn().receive(p);
+		int port;
+		p >> port;
+		c->connect(c->getSocketIn().getRemoteAddress(), port, clientIdTurn++);
+		mt_c.lock();
+		c->runThreads(*&c);
+		clients.push_back(*&c);
+		mt_c.unlock();
+	}
+}
 
-    void Connection::run()
-    {
-        std::cout<<"Connection "<<_id<<" is runing"<<std::endl;
-        _isRunning = true;
-        _receiveThread.launch();
-        _sendThread.launch();
-    }
+void Connection::pth_recieve_new_cust(Connection* _this)
+{
+	while (!_this->stop)
+	{
+		_this->recieve_new_cust();
+	}
+}
 
-    void Connection::stop()
-    {
-        _isRunning  = false;
-        std::cout<<"Connection "<<_id<<" is stoped"<<std::endl;
-    }
+void Connection::pth_update(Connection* _this)
+{
+	while (!_this->stop)
+	{
+		::std::list<Customor*>::iterator itr;
+		mt_c.lock();
+		for (itr = clients.begin(); itr != clients.end();)
+		{
+			if (!(*itr)->isConnected)
+			{
+				itr = clients.erase(itr);
+				_this->clientIdTurn--;
+			}
+			else
+				itr++;
+		}
+		mt_c.unlock();
+	}
+}
 
-    void Connection::wait()
-    {
-        _receiveThread.wait();
-        _sendThread.wait();
-    }
-
-    int Connection::id()const
-    {
-        return _id;
-    }
-
-    bool Connection::pollEvent(sf::Packet& event)
-    {
-        bool res = false;
-        sf::Lock guard(_receiveMutex);
-        if(_incoming.size() > 0)
-        {
-            std::swap(event,_incoming.front());
-            _incoming.pop();
-            res = true;
-        }
-        return res;
-    }
-
-    
-    bool Connection::pollEvent(packet::NetworkEvent*& event)
-    {
-        bool res = false;
-        sf::Packet msg;
-        if(Connection::pollEvent(msg))
-        {
-            event = packet::NetworkEvent::makeFromPacket(msg);
-            if(event != nullptr)
-                res = true;
-        }
-        return res;
-    }
-
-    void Connection::send(sf::Packet& packet)
-    {
-        sf::Lock guard(_sendMutex);
-        _outgoing.emplace(packet);
-    }
-
-
-    void Connection::disconnect()
-    {
-        _sockIn.disconnect();
-        _sockOut.disconnect();
-    }
-
-    void Connection::_receive()
-    {
-        sf::SocketSelector selector;
-        selector.add(_sockIn);
-
-        while(_isRunning)
-        {
-            if(not selector.wait(sf::seconds(1)))
-                continue;
-
-            if(not selector.isReady(_sockIn))
-                continue;
-
-            sf::Packet packet;
-            sf::Socket::Status status = _sockIn.receive(packet);
-            if(status == sf::Socket::Done)
-            {
-                sf::Lock guard(_receiveMutex);
-                _incoming.emplace(std::move(packet));
-            }
-            else if (status == sf::Socket::Disconnected)
-            {
-                packet.clear();
-                packet<<packet::Disconnected();
-                sf::Lock guard(_receiveMutex);
-                _incoming.emplace(std::move(packet));
-
-                stop();
-            }
-        }
-    }
-
-    void Connection::_send()
-    {
-        while(_isRunning)
-        {
-            _sendMutex.lock();
-            if(_outgoing.size() > 0)
-            {
-                sf::Packet packet = _outgoing.front();
-                _outgoing.pop();
-                _sendMutex.unlock();
-                _sockOut.send(packet);
-            }
-            else
-            {
-                _sendMutex.unlock();
-            }
-
-        }
-    }
+void Connection::runThreads(Connection* _this)
+{
+	::std::thread th1 = ::std::thread(Connection::pth_recieve_new_cust, _this);
+	::std::thread th2 = ::std::thread(Connection::pth_update, _this);
+	th1.detach();
+	th2.detach();
 }

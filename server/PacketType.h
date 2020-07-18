@@ -1,8 +1,6 @@
 #pragma once
 #include "Def.h"
-#include "Room.h"
-#include "Player.h"
-
+extern class Game;
 namespace pt
 {
 	enum MSG_TYPE {
@@ -251,7 +249,7 @@ namespace pt
 		friend sf::Packet& operator>>(sf::Packet&, DaGameOver& self);
 		friend sf::Packet& operator<<(sf::Packet&, const DaGameOver& self);
 
-		::std::vector<Room> room;
+		::std::vector<Game> game;
 	};
 
 	//daDealCard

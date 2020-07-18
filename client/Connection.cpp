@@ -2,8 +2,9 @@
 
 Connection::Connection()
 {
-	ip = ::sf::IpAddress::getLocalAddress();
-	port = 5678;
+	host_ip = ::sf::IpAddress::getLocalAddress();
+	port_self = 3456;
+	port_host = 5678;
 	timeout = ::sf::seconds(5);
 	id = 0;
 	isConnected = false;
@@ -11,26 +12,43 @@ Connection::Connection()
 
 Connection::~Connection()
 {
-	socket.disconnect();
+	disconnect();
 }
 
 bool Connection::connect()
 {
-	if (socket.connect(ip, port, timeout) != ::sf::Socket::Done)
+	if (socket_out.connect(host_ip, port_host, timeout) != ::sf::Socket::Done)
 	{
 		isConnected = false;
 		return false;
 	}
 	::sf::Packet p;
-	socket.receive(p);
-	p >> id;
-	isConnected = true;
+	p << port_self;
+	socket_out.send(p);
+	p.clear();
+	listener.listen(port_self);
+	if (listener.accept(socket_in) == ::sf::Socket::Done)
+	{
+		::std::cout << "host ip:" << socket_in.getRemoteAddress() << "\n";
+		socket_in.receive(p);
+		p >> id;
+		::std::cout << "my id is: " << id << "\nall is good\n";
+		isConnected = true;
+	}
+	else
+		return false;
+
 	return true;
 }
 
 void Connection::disconnect()
 {
-	socket.disconnect();
+	::sf::Packet p;
+	int i = 886;
+	p << i;
+	socket_out.send(p);
+	socket_in.disconnect();
+	socket_out.disconnect();
 	isConnected = false;
 }
 
@@ -45,7 +63,7 @@ bool Connection::sendNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent event)
 	if (!isConnected)
 		return false;
 	::sf::Packet packet;
-	packet <<id<< static_cast<int>(type) << event;
+	packet << static_cast<int>(type) << event;
 
 	mt_s.lock();
 	q_sender.push(packet);
@@ -75,9 +93,14 @@ bool Connection::getNetworkEvent(::pt::NetworkEvent& nwe)
 void Connection::receiveEvent()
 {
 	::sf::Packet packet;
-	socket.receive(packet);
+	socket_in.receive(packet);
 	int i;
 	packet >> i;
+	if (i == 886)
+	{
+		isConnected = false;
+		return;
+	}
 	::pt::MSG_TYPE type = static_cast<::pt::MSG_TYPE>(i);
 	::pt::NetworkEvent* msg = nullptr;
 	switch (type)
@@ -97,7 +120,7 @@ void Connection::receiveEvent()
 		msg = new ::pt::ReCreatRoom();
 		break;
 	case pt::reJoinRoom:
-		msg = new ::pt::ReJoinRoom();
+		msg = new ::pt::ReJoinRoom(0);
 		break;
 	case pt::reReady:
 		msg = new ::pt::ReReady();
@@ -153,6 +176,7 @@ void Connection::receiveEvent()
 	if (msg != nullptr)
 	{
 		mt_r.lock();
+		packet >> *msg;
 		q_reciever.push_back(*msg);
 		mt_r.unlock();
 	}
@@ -161,7 +185,7 @@ void Connection::receiveEvent()
 void Connection::sendEvent()
 {
 	mt_s.lock();
-	socket.send(q_sender.front());
+	socket_out.send(q_sender.front());
 	q_sender.pop();
 	mt_s.unlock();
 }

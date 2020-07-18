@@ -1,9 +1,6 @@
 #pragma once
-#include<SFML/Graphics.hpp>
-#include<SFML/Audio.hpp>
 #include <SFML/Network.hpp>
 #include<string>
-#include<windows.h>
 #include<iostream>
 #include<vector>
 #include<sstream>
@@ -11,9 +8,9 @@
 #include <functional>
 #include <algorithm>
 #include <unordered_map>
-#define WIDTH 1280
-#define HEIGHT 720
-using namespace sf;
+#include<list>
+#include<queue>
+#include<mutex>
 
 enum SF { NO = 0, DIZHU, NONM };
 enum PukeType { 
@@ -58,12 +55,7 @@ enum PukeType {
 };
 enum GameSta { Ready = 0, Deal, Call, Play };
 enum DEC { NOT = 0, PASS, CHU };
-extern int vol_bgm, vol_sound;
-extern int jb;
-extern int px1, py1, px2, py2;
-extern int roomId;
-extern bool isRhythm;
-extern bool isLoading;
-extern bool isExit;
 
-void LoadAnim();
+extern class Customor;
+extern ::std::list<Customor*> clients;
+extern ::sf::Mutex mt_c;

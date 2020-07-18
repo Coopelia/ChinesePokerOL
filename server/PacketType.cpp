@@ -1,4 +1,6 @@
-#include "PacketType.hpp"
+#include "PacketType.h"
+#include"Game.h"
+#include"Customor.h"
 
 namespace pt
 {
@@ -321,38 +323,20 @@ namespace pt
 
 	sf::Packet& operator>>(sf::Packet& packet, DaRoomList& self)
 	{
-		Room room;
-		int t;
-		bool f;
-		while (!packet.endOfPacket())
-		{
-			packet >> t;
-			room.setID(t);
-			packet >> f;
-			room.setState(f);
-			packet >> t;
-			room.setNum(t);
-			for (int i = 0; i < room.getNum(); i++)
-			{
-				packet >> t;
-				room.addPlayer(t);
-			}
-			self.room.push_back(room);
-		}
 		return packet;
 	}
 
 	sf::Packet& operator<<(sf::Packet& packet, DaRoomList& self)
 	{
 		int num;
-		::std::vector<int> pid;
-		for (auto p : self.room)
+		::std::vector<Customor*> pid;
+		for (auto p : self.game)
 		{
 			num = p.getNum();
-			pid = p.getPlayersId();
+			pid = p.getPlayersList();
 			packet << p.getID() << p.getState() << num;
 			for (int i = 0; i < num; i++)
-				packet << pid[i];
+				packet << pid[i]->Id();
 		}
 		return packet;
 	}

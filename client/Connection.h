@@ -16,10 +16,13 @@ public:
 	void sendEvent();//发送线程调用
 	bool isConnected;
 private:
-	::sf::TcpSocket socket;
-	::sf::IpAddress ip;
+	::sf::TcpListener listener;
+	::sf::TcpSocket socket_in;
+	::sf::TcpSocket socket_out;
+	::sf::IpAddress host_ip;
 	::sf::Time timeout;
-	uint32_t port;
+	uint32_t port_host;
+	uint32_t port_self;
 	int id;
 };
 

@@ -77,33 +77,7 @@ void OLPukeManager::update()
 					human_2->hand_card[i] = dpsic.playerInfo[i].second.second[i];
 			}
 		}
-
-		//更新self手牌位置坐标偏移量
-		puke_dt_e = 55 - human_self->num_card;
-		puke_dt_x = 620 - human_self->num_card * puke_dt_e / 2;
-		
-		//更新牌的状态
-		for (int i = 0; i < 14; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				puke.c[i][j].dt_e = puke_dt_e;
-				puke.c[i][j].isOnTop = false;
-				if (!mouseRect.isMousePressed)
-					if (puke.c[i][j].isPressed)
-					{
-						puke.c[i][j].isSeleted = !puke.c[i][j].isSeleted;
-						puke.c[i][j].isPressed = false;
-					}
-			}
-		}
-
-		//更新出牌区偏移量
-		puke_chupai_dx = 50 - deskCard.size();
-		puke_chupai_lx = 620 - deskCard.size() * puke_chupai_dx / 2;
-
-		puke.c[human_self->hand_card[human_self->num_card - 1] / 4][human_self->hand_card[human_self->num_card - 1] % 4].isOnTop = true;
-		 
+	
 		//自己连续二回合时，清空出牌区的牌
 		if ((human_self->isMyTime && human_self->dec == NOT && human_1->dec == PASS && human_2->dec == PASS) ||
 			(human_1->isMyTime && human_1->dec == NOT && human_self->dec == PASS && human_2->dec == PASS) ||
@@ -113,11 +87,22 @@ void OLPukeManager::update()
 			if(connector.sendNetworkEvent(::pt::reClearDeskCard, rcdc))
 				deskCard.clear();
 		}
-
-		//更新地主牌
-		for (int i = 0; i < 14; i++)
+	}
+	::pt::DaChuDec dcc;
+	if (connector.getNetworkEvent(dcc))
+	{
+		//更新地主牌颜色
+		int i, j;
+		for (int i = 0; i < dcc.cards.size(); i++)
 		{
-			for (int j = 0; j < 4; j++)
+			i = dcc.cards[i] / 4;
+			j = dcc.cards[i] % 4;
+			puke.c[i][j].isDeleted = true;
+			puke.c[i][j].isOnDesk = true;
+		}
+		for (i = 0; i < 14; i++)
+		{
+			for (j = 0; j < 4; j++)
 			{
 				if (puke.c[i][j].isDeleted || puke.c[i][j].isOnDesk)
 				{
@@ -130,6 +115,33 @@ void OLPukeManager::update()
 			}
 		}
 	}
+
+	//更新出牌区偏移量
+	puke_chupai_dx = 50 - deskCard.size();
+	puke_chupai_lx = 620 - deskCard.size() * puke_chupai_dx / 2;
+
+	//更新牌的状态
+	for (int i = 0; i < 14; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			puke.c[i][j].dt_e = puke_dt_e;
+			puke.c[i][j].isOnTop = false;
+			if (!mouseRect.isMousePressed)
+				if (puke.c[i][j].isPressed)
+				{
+					puke.c[i][j].isSeleted = !puke.c[i][j].isSeleted;
+					puke.c[i][j].isPressed = false;
+				}
+		}
+	}
+
+	//更新self手牌位置坐标偏移量
+	puke_dt_e = 55 - human_self->num_card;
+	puke_dt_x = 620 - human_self->num_card * puke_dt_e / 2;
+
+	puke.c[human_self->hand_card[human_self->num_card - 1] / 4][human_self->hand_card[human_self->num_card - 1] % 4].isOnTop = true;
+
 }
 
 void OLPukeManager::clearAll()

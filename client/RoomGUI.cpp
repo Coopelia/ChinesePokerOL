@@ -61,7 +61,7 @@ int RoomGUI::onClick(::sf::Event& e)
 	{
 		if (button[i].onClick(e)&&room[i].getNum()<3)
 		{
-			::pt::ReJoinRoom nwe;
+			::pt::ReJoinRoom nwe(room[i].getID());
 			if (connector.sendNetworkEvent(::pt::reJoinRoom, nwe))
 				return room[i].getID();
 			break;

@@ -44,6 +44,7 @@ public:
 	Button bt_chupai, bt_pass, bt_callThree, bt_callTwo, bt_callOne, bt_callNo;
 	Sprite sMeg;
 	Texture tMeg;
+	bool isReady;
 };
 
 class AI :public User//AI¿‡

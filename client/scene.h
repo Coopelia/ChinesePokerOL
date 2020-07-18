@@ -35,7 +35,7 @@ public:
 	Sprite sBack_exit;
 	Texture tBack_exit;
 	Button bt_exit_ok, bt_exit_cancel;
-	void input_exit(Event& e);
+	virtual void input_exit(Event& e) {};
 	void draw_exit(RenderWindow* app);
 	//连接出错对话框
 	Sprite sBack_error;
@@ -111,6 +111,8 @@ public:
 	Button bt_join, bt_join_exit;
 	void input_join(Event& e);
 	void draw_join();
+
+	void input_exit(Event& e);
 };
 
 class GameScene: public Scene //派生出游戏场景类（单机）
@@ -142,6 +144,7 @@ public:
 	void SceneClose();//关闭场景
 	void player_turn_input(Event& e);//玩家轮流出牌和叫地主
 	void input_rhythm(Event& e); //节奏模式输入
+	void input_exit(Event& e);
 private:
 	RenderWindow* app;
 };
@@ -170,6 +173,7 @@ public:
 	void Draw();//绘制主函数
 	void SceneClose();//关闭场景
 	void player_turn_input(Event& e);//玩家轮流出牌和叫地主
+	void input_exit(Event& e);
 private:
 	RenderWindow* app;
 	int player_turned_id;
