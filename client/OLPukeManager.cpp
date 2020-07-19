@@ -9,7 +9,7 @@ OLPukeManager::OLPukeManager()
 	this->human_self = NULL;
 	this->human_1 = NULL;
 	this->human_2 = NULL;
-	
+
 }
 
 void OLPukeManager::start()
@@ -20,83 +20,86 @@ void OLPukeManager::start()
 void OLPukeManager::update()
 {
 	//更新房间中玩家的状态信息
-	::pt::DaPlayerStateInfo_Chu dpsic;
-	if (connector.getNetworkEvent(dpsic))
+	::pt::NetworkEvent* dpsic = nullptr;
+	if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Chu, dpsic))
 	{
-		if (dpsic.player_turned_id != player_turned_id)
+		if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id != player_turned_id)
 		{
-			if (dpsic.player_turned_id == human_self->playerId)
+			if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id == human_self->playerId)
 			{
 				human_self->isMyTime = true;
 				human_self->clock_daojishi.restart();
-				human_self->dec = dpsic.dec;
+				human_self->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 				human_1->isMyTime = false;
 				human_2->isMyTime = false;
 			}
-			else if (dpsic.player_turned_id == human_1->playerId)
+			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id == human_1->playerId)
 			{
 				human_self->isMyTime = false;
 				human_1->isMyTime = true;
 				human_1->clock_daojishi.restart();
-				human_1->dec = dpsic.dec;
+				human_1->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 				human_2->isMyTime = false;
 			}
-			else if (dpsic.player_turned_id == human_2->playerId)
+			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id == human_2->playerId)
 			{
 				human_self->isMyTime = false;
 				human_1->isMyTime = false;
 				human_2->isMyTime = true;
 				human_2->clock_daojishi.restart();
-				human_2->dec = dpsic.dec;
+				human_2->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 			}
-			player_turned_id = dpsic.player_turned_id;
+			player_turned_id = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id;
 		}
 
 		//更新玩家手牌和身份
-		for (int i = 0; i < dpsic.playerInfo.size(); i++)
+		for (int i = 0; i < static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo.size(); i++)
 		{
-			if (dpsic.playerInfo[i].first.first == human_self->playerId)
+			if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.first == human_self->playerId)
 			{
-				human_self->num_card = dpsic.playerInfo[i].second.first;
-				human_self->sid = dpsic.playerInfo[i].first.second;
+				human_self->num_card = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.first;
+				human_self->sid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.second;
 				for (int i = 0; i < human_self->num_card; i++)
-					human_self->hand_card[i] = dpsic.playerInfo[i].second.second[i];
+					human_self->hand_card[i] = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.second[i];
 			}
-			else if (dpsic.playerInfo[i].first.first == human_1->playerId)
+			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.first == human_1->playerId)
 			{
-				human_1->num_card = dpsic.playerInfo[i].second.first;
-				human_1->sid = dpsic.playerInfo[i].first.second;
+				human_1->num_card = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.first;
+				human_1->sid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.second;
 				for (int i = 0; i < human_1->num_card; i++)
-					human_1->hand_card[i] = dpsic.playerInfo[i].second.second[i];
+					human_1->hand_card[i] = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.second[i];
 			}
-			else if (dpsic.playerInfo[i].first.first == human_2->playerId)
+			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.first == human_2->playerId)
 			{
-				human_2->num_card = dpsic.playerInfo[i].second.first;
-				human_2->sid = dpsic.playerInfo[i].first.second;
+				human_2->num_card = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.first;
+				human_2->sid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.second;
 				for (int i = 0; i < human_2->num_card; i++)
-					human_2->hand_card[i] = dpsic.playerInfo[i].second.second[i];
+					human_2->hand_card[i] = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.second[i];
 			}
 		}
-	
+
 		//自己连续二回合时，清空出牌区的牌
 		if ((human_self->isMyTime && human_self->dec == NOT && human_1->dec == PASS && human_2->dec == PASS) ||
 			(human_1->isMyTime && human_1->dec == NOT && human_self->dec == PASS && human_2->dec == PASS) ||
 			(human_2->isMyTime && human_2->dec == NOT && human_1->dec == PASS && human_self->dec == PASS))
 		{
 			::pt::ReClearDeskCard rcdc;
-			if(connector.sendNetworkEvent(::pt::reClearDeskCard, rcdc))
+			::sf::Packet packet;
+			packet << static_cast<int>(rcdc.type()) << rcdc;
+			if (connector.sendNetworkEvent(packet))
 				deskCard.clear();
 		}
+		delete dpsic;
 	}
-	::pt::DaChuDec dcc;
-	if (connector.getNetworkEvent(dcc))
+	::pt::NetworkEvent* dcc = nullptr;
+	if (connector.getNetworkEvent(::pt::daChuDec, dcc))
 	{
 		//更新地主牌颜色
 		int i, j;
-		for (int i = 0; i < dcc.cards.size(); i++)
+		for (int i = 0; i < static_cast<::pt::DaChuDec*>(dcc)->cards.size(); i++)
 		{
-			i = dcc.cards[i] / 4;
-			j = dcc.cards[i] % 4;
+			i = static_cast<::pt::DaChuDec*>(dcc)->cards[i] / 4;
+			j = static_cast<::pt::DaChuDec*>(dcc)->cards[i] % 4;
 			puke.c[i][j].isDeleted = true;
 			puke.c[i][j].isOnDesk = true;
 		}
@@ -114,6 +117,7 @@ void OLPukeManager::update()
 				}
 			}
 		}
+		delete dcc;
 	}
 
 	//更新出牌区偏移量
@@ -165,58 +169,60 @@ void OLPukeManager::clearAll()
 
 void OLPukeManager::deal()
 {
-	::pt::DaDealCard ddc;
-	if (connector.getNetworkEvent(ddc))
+	::pt::NetworkEvent* ddc = nullptr;
+	isLoading = true;
+	while (!connector.getNetworkEvent(::pt::daDealCard, ddc));
+	isLoading = false;
+	if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_self->playerId)
 	{
-		if (ddc.playerId == human_self->playerId)
-		{
-			for (int i = 0; i < ddc.cards.size(); i++)
-				human_self->addCard(ddc.cards[i]);
-		}
-		else if (ddc.playerId == human_1->playerId)
-		{
-			for (int i = 0; i < ddc.cards.size(); i++)
-				human_1->addCard(ddc.cards[i]);
-		}
-		else if (ddc.playerId == human_2->playerId)
-		{
-			for (int i = 0; i < ddc.cards.size(); i++)
-				human_2->addCard(ddc.cards[i]);
-		}
+		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+			human_self->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
 	}
+	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_1->playerId)
+	{
+		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+			human_1->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+	}
+	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_2->playerId)
+	{
+		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+			human_2->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+	}
+	delete ddc;
 }
 
 void OLPukeManager::deal_dizhuCard()
 {
-	::pt::DaDealCard ddc;
-	if (connector.getNetworkEvent(ddc))
+	::pt::NetworkEvent* ddc = nullptr;
+	isLoading = true;
+	while (!connector.getNetworkEvent(::pt::daDealCard, ddc));
+	isLoading = false;
+	if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_self->playerId)
 	{
-		if (ddc.playerId == human_self->playerId)
-		{
-			human_self->sid = DIZHU;
-			human_1->sid = NONM;
-			human_2->sid = NONM;
-			for (int i = 0; i < ddc.cards.size(); i++)
-				human_self->addCard(ddc.cards[i]);
-		}
-		else if (ddc.playerId == human_1->playerId)
-		{
-			human_self->sid = NONM;
-			human_1->sid = DIZHU;
-			human_2->sid = NONM;
-			for (int i = 0; i < ddc.cards.size(); i++)
-				human_1->addCard(ddc.cards[i]);
-		}
-		else if (ddc.playerId == human_2->playerId)
-		{
-			human_self->sid = NONM;
-			human_1->sid = NONM;
-			human_2->sid = DIZHU;
-			for (int i = 0; i < ddc.cards.size(); i++)
-				human_2->addCard(ddc.cards[i]);
-		}
-		dizhuCard = ddc.cards;
+		human_self->sid = DIZHU;
+		human_1->sid = NONM;
+		human_2->sid = NONM;
+		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+			human_self->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
 	}
+	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_1->playerId)
+	{
+		human_self->sid = NONM;
+		human_1->sid = DIZHU;
+		human_2->sid = NONM;
+		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+			human_1->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+	}
+	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_2->playerId)
+	{
+		human_self->sid = NONM;
+		human_1->sid = NONM;
+		human_2->sid = DIZHU;
+		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+			human_2->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+	}
+	dizhuCard = static_cast<::pt::DaDealCard*>(ddc)->cards;
+	delete ddc;
 }
 
 void OLPukeManager::addToJudge(int i)
@@ -535,7 +541,9 @@ bool OLPukeManager::handSeletedCard()
 		::pt::DaChuDec nwe;
 		nwe.dec = CHU;
 		nwe.cards = seletedCard;
-		if (connector.sendNetworkEvent(::pt::daChuDec, nwe))
+		::sf::Packet packet;
+		packet << static_cast<int>(nwe.type()) << nwe;
+		if (connector.sendNetworkEvent(packet))
 		{
 			seletedCard.clear();
 			return true;

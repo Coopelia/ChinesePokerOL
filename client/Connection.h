@@ -10,8 +10,8 @@ public:
 	bool connect();
 	void disconnect();
 	int hostId();
-	bool sendNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent event);//调用这个函数发送信息
-	bool getNetworkEvent(::pt::NetworkEvent& nwe);//调用这个函数获取信息
+	bool sendNetworkEvent(::sf::Packet packet);//调用这个函数发送信息
+	bool getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg);//调用这个函数获取信息
 	void receiveEvent();//接收线程调用
 	void sendEvent();//发送线程调用
 	bool isConnected;

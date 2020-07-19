@@ -11,8 +11,8 @@ public:
 	void game_logic();
 	void setState(bool isPlaying);
 	void setID(int id);
-	void addPlayer(Customor*& c);
-	void removePlayer(Customor*& c);
+	void addPlayer(Customor* c);
+	void removePlayer(Customor* c);
 	int getNum();
 	bool getState();//isPlaying?
 	int getID();

@@ -59,7 +59,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, ReJoinRoom& self)
+	sf::Packet& operator<<(sf::Packet& packet, const ReJoinRoom& self)
 	{
 		packet << self.roomId;
 		return packet;
@@ -96,7 +96,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaCallDec& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaCallDec& self)
 	{
 		packet << ::sf::Uint8(self.s_call);
 		return packet;
@@ -121,7 +121,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaChuDec& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaChuDec& self)
 	{
 		packet << ::sf::Uint8(self.dec);
 		for (auto p : self.cards)
@@ -130,21 +130,21 @@ namespace pt
 	}
 
 	/////////////////////////////// daGameState ////////////////////
-	DaGameState::DaGameState() :NetworkEvent(::pt::daGameOver)
+	DaGameState::DaGameState() :NetworkEvent(::pt::daGameState)
 	{
 	}
 
 	sf::Packet& operator>>(sf::Packet& packet, DaGameState& self)
 	{
-		::sf::Uint8 t;
+		int t;
 		packet >> t;
 		self.gsta = (GameSta)t;
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaGameState& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaGameState& self)
 	{
-		packet << ::sf::Uint8(self.gsta);
+		packet << int(self.gsta);
 		return packet;
 	}
 
@@ -164,7 +164,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaPlayerStateInfo_Ready& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaPlayerStateInfo_Ready& self)
 	{
 		for (int i = 0; i < self.isReady.size(); i++)
 			packet << self.isReady[i].first << self.isReady[i].second;
@@ -182,7 +182,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaPlayerStateInfo_Call& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaPlayerStateInfo_Call& self)
 	{
 		packet << self.player_turned_id << self.s_call;
 		return packet;
@@ -220,7 +220,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaPlayerStateInfo_Chu& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaPlayerStateInfo_Chu& self)
 	{
 		packet << self.player_turned_id;
 		packet << ::sf::Uint8(self.dec);
@@ -245,7 +245,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaBeishu& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaBeishu& self)
 	{
 		packet << self.beishu;
 		return packet;
@@ -267,7 +267,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaDizhuCard& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaDizhuCard& self)
 	{
 		for (int i = 0; i < self.cards.size(); i++)
 			packet << self.cards[i];
@@ -290,7 +290,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaDeskCard& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaDeskCard& self)
 	{
 		for (int i = 0; i < self.cards.size(); i++)
 			packet << self.cards[i];
@@ -308,7 +308,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaGameOver& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaGameOver& self)
 	{
 		packet << self.winner_id;
 		return packet;
@@ -322,7 +322,7 @@ namespace pt
 	sf::Packet& operator>>(sf::Packet& packet, DaRoomList& self)
 	{
 		Room room;
-		int t;
+		int t, n;
 		bool f;
 		while (!packet.endOfPacket())
 		{
@@ -330,9 +330,8 @@ namespace pt
 			room.setID(t);
 			packet >> f;
 			room.setState(f);
-			packet >> t;
-			room.setNum(t);
-			for (int i = 0; i < room.getNum(); i++)
+			packet >> n;
+			for (int i = 0; i < n; i++)
 			{
 				packet >> t;
 				room.addPlayer(t);
@@ -342,18 +341,8 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaRoomList& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaRoomList& self)
 	{
-		int num;
-		::std::vector<int> pid;
-		for (auto p : self.room)
-		{
-			num = p.getNum();
-			pid = p.getPlayersId();
-			packet << p.getID() << p.getState() << num;
-			for (int i = 0; i < num; i++)
-				packet << pid[i];
-		}
 		return packet;
 	}
 
@@ -374,7 +363,7 @@ namespace pt
 		return packet;
 	}
 
-	sf::Packet& operator<<(sf::Packet& packet, DaDealCard& self)
+	sf::Packet& operator<<(sf::Packet& packet, const DaDealCard& self)
 	{
 		packet << self.playerId;
 		for (int i = 0; i < self.cards.size(); i++)

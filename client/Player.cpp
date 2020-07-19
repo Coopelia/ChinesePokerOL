@@ -245,7 +245,9 @@ void Player::callDizhu(Event& e)
 		isCallingDizhu = false;
 		::pt::DaCallDec dcd;
 		dcd.s_call = s_call;
-		while (!connector.sendNetworkEvent(::pt::daCallDec, dcd))
+		::sf::Packet packet;
+		packet << static_cast<int>(dcd.type()) << dcd;
+		while (!connector.sendNetworkEvent(packet))
 			::std::cout << "sending......\n";
 	}
 	else

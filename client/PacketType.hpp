@@ -248,8 +248,8 @@ namespace pt
 	public:
 		DaRoomList();
 
-		friend sf::Packet& operator>>(sf::Packet&, DaGameOver& self);
-		friend sf::Packet& operator<<(sf::Packet&, const DaGameOver& self);
+		friend sf::Packet& operator>>(sf::Packet&, DaRoomList& self);
+		friend sf::Packet& operator<<(sf::Packet&, const DaRoomList& self);
 
 		::std::vector<Room> room;
 	};

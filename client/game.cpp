@@ -5,7 +5,7 @@ Game::Game()
 	this->app = new RenderWindow(VideoMode(WIDTH, HEIGHT), "ChinesePoker", Uint32(5));
 	this->app->setFramerateLimit(60);
 	::sf::WindowHandle h = app->getSystemHandle();
-	::SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+	//::SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
 	this->start_scene.app = app;
 	this->start_scene.Initial_window(app);
 	this->start_scene.Initial_assets();

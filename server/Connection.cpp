@@ -35,7 +35,7 @@ void Connection::recieve_new_cust()
 		c->connect(c->getSocketIn().getRemoteAddress(), port, clientIdTurn++);
 		mt_c.lock();
 		c->runThreads(*&c);
-		clients.push_back(*&c);
+		clients.push_back(c);
 		mt_c.unlock();
 	}
 }

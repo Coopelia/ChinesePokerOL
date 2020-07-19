@@ -10,6 +10,14 @@ RoomGUI::RoomGUI()
 	this->sBackMenu.setTexture(tBackMenu);
 	this->tBackSelet.loadFromFile("assets/image/game/大幅/大厅弹窗/room_sel.png");
 	this->sBackSelet.setTexture(tBackSelet);
+	//// debug///////
+	/*this->room.resize(4);
+	this->button.resize(4);
+	for (int i = 0; i < room.size(); i++)
+	{
+		button[i].setTextrue("assets/image/game/大厅弹框/#按钮/bt_join.png");
+		button[i].setScale(0.5, 0.5);
+	}*/
 }
 
 void RoomGUI::initial_window(::sf::RenderWindow* app)
@@ -22,19 +30,27 @@ void RoomGUI::setInfo(::std::vector<Room>& room)
 	this->room = room;
 	this->button.resize(room.size());
 	for (int i = 0; i < room.size(); i++)
+	{
 		button[i].setTextrue("assets/image/game/大厅弹框/#按钮/bt_join.png");
+		button[i].setScale(0.5, 0.5);
+	}
 }
 
-void RoomGUI::update()
+void RoomGUI::update_room_list()
 {
-	if (connector.isConnected&&roomId==-1)
+	if (connector.isConnected && roomId == -1)
 	{
 		::pt::ReGetRoomList nwe;
-		connector.sendNetworkEvent(::pt::reGetRoomList, nwe);
-		::pt::DaRoomList drl;
-		if (connector.getNetworkEvent(drl))
+		::sf::Packet packet;
+		packet << static_cast<int>(nwe.type()) << nwe;
+		connector.sendNetworkEvent(packet);
+		::pt::NetworkEvent* drl = nullptr;
+		if (connector.getNetworkEvent(::pt::daRoomList, drl))
 		{
-			setInfo(drl.room);
+			setInfo(static_cast<::pt::DaRoomList*>(drl)->room);
+			::std::cout << "获取到了房间列表\n";
+			::std::cout << "当前共有" << room.size() << "个房间\n";
+			delete drl;
 		}
 	}
 }
@@ -45,13 +61,14 @@ void RoomGUI::show()
 	app->draw(sBackMenu);
 	for (int i = 0; i < room.size(); i++)
 	{
-		sBackSelet.setPosition(210 + (i % 2) * 306, 80 + (i / 2) * 100);
+		sBackSelet.setPosition(300 + (i % 2) * 350, 180 + (i / 2) * 110);
 		app->draw(sBackSelet);
 		text.setString(L"房间已有: " + ::std::to_string(room[i].getNum()) + L"人");
-		text.setPosition(215 + (i % 2) * 306, 85 + (i / 2) * 100);
+		text.setPosition(320 + (i % 2) * 350, 190 + (i / 2) * 110);
 		app->draw(text);
 		button[i].app = app;
-		button[i].setPosition(300 + i * 306, 85 + i * 100);
+		button[i].setPosition(470 + (i % 2) * 350, 215 + (i / 2) * 110);
+		button[i].show();
 	}
 }
 
@@ -62,8 +79,18 @@ int RoomGUI::onClick(::sf::Event& e)
 		if (button[i].onClick(e)&&room[i].getNum()<3)
 		{
 			::pt::ReJoinRoom nwe(room[i].getID());
-			if (connector.sendNetworkEvent(::pt::reJoinRoom, nwe))
-				return room[i].getID();
+			::sf::Packet packet;
+			packet << static_cast<int>(nwe.type()) << nwe;
+			if (connector.sendNetworkEvent(packet))
+			{
+				isLoading = true;
+				::std::cout << "正在加载\n";
+				::pt::NetworkEvent* re = nullptr;
+				while (!connector.getNetworkEvent(::pt::reJoinRoom, re));
+				isLoading = false;
+				int id = static_cast<::pt::ReJoinRoom*>(re)->roomId;
+				return id;
+			}
 			break;
 		}
 	}

@@ -3,6 +3,7 @@
 #include"Room.h"
 #include"Button.h"
 #include"Connection.h"
+#include"MyClock.h"
 
 class RoomGUI
 {
@@ -11,8 +12,9 @@ public:
 	void initial_window(::sf::RenderWindow* app);
 	void setInfo(::std::vector<Room>& room);
 	void show();
-	void update();
+	void update_room_list();
 	int onClick(::sf::Event& e);
+	friend class StartScene;
 private:
 	::sf::RenderWindow* app;
 	::sf::Sprite sBackMenu, sBackSelet;

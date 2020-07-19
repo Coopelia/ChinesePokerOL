@@ -4,7 +4,6 @@ Room::Room()
 {
 	ID = -1;
 	isPlaying = false;
-	num_player = 0;
 }
 
 void Room::setState(bool isPlaying)
@@ -17,15 +16,9 @@ void Room::setID(int id)
 	this->ID = id;
 }
 
-void Room::setNum(int num)
-{
-	this->num_player = num;
-}
-
 void Room::addPlayer(int id)
 {
 	this->playersId.push_back(id);
-	this->num_player++;
 }
 
 void Room::removePlayer(int id)
@@ -40,12 +33,11 @@ void Room::removePlayer(int id)
 		}
 		itr++;
 	}
-	this->num_player--;
 }
 
 int Room::getNum()
 {
-	return this->num_player;
+	return this->playersId.size();
 }
 
 bool Room::getState()
