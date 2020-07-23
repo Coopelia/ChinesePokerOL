@@ -60,13 +60,13 @@
     <ClInclude Include="Room.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="PacketType.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Connection.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="RoomGUI.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="PacketType.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

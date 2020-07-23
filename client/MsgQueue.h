@@ -3,7 +3,7 @@
 #include<list>
 #include<queue>
 #include<mutex>
-#include"PacketType.hpp"
+#include"PacketType.h"
 
 extern ::std::queue<::sf::Packet> q_sender;//发送者消息队列
 extern Mutex mt_s;//访问该队列的互斥锁

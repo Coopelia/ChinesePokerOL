@@ -163,7 +163,6 @@ public:
 	SoundBuffer sb_get;
 	int score;
 	Music mu_over;
-	MyClock clock_showCall;//出牌倒计时
 	GameSceneOL();
 	void Initial_window(RenderWindow* app);
 	void Initial_assets();//加载素材
@@ -176,5 +175,4 @@ public:
 	void input_exit(Event& e);
 private:
 	RenderWindow* app;
-	int player_turned_id;
 };

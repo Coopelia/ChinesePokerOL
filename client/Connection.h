@@ -1,6 +1,6 @@
 #pragma once
 #include"MsgQueue.h"
-#include"PacketType.hpp"
+#include"PacketType.h"
 
 class Connection
 {
@@ -11,7 +11,7 @@ public:
 	void disconnect();
 	int hostId();
 	bool sendNetworkEvent(::sf::Packet packet);//调用这个函数发送信息
-	bool getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg);//调用这个函数获取信息
+	bool getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg, bool fg);//调用这个函数获取信息(fg:true--遍历,false--get the front)
 	void receiveEvent();//接收线程调用
 	void sendEvent();//发送线程调用
 	bool isConnected;

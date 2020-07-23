@@ -57,5 +57,5 @@ enum GameSta { Ready = 0, Deal, Call, Play };
 enum DEC { NOT = 0, PASS, CHU };
 
 extern class Customor;
-extern ::std::list<Customor*> clients;
+extern ::std::vector<Customor*> clients;
 extern ::sf::Mutex mt_c;

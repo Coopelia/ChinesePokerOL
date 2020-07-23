@@ -14,6 +14,7 @@ public:
 	void show();
 	void update_room_list();
 	int onClick(::sf::Event& e);
+	Button bt_update;
 	friend class StartScene;
 private:
 	::sf::RenderWindow* app;

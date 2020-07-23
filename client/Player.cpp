@@ -8,6 +8,7 @@ User::User()
 	sid = NO;
 	dec = NOT;
 	isMyTime = false;
+	isCallingDizhu = false;
 	isWin = false;
 	num_card = 0;
 	s_call = -1;
@@ -228,9 +229,7 @@ void Player::Initial(RenderWindow* app)
 
 void Player::callDizhu(Event& e)
 {
-	if (clock_daojishi.second > 30)
-		s_call = 0;
-	else if (bt_callThree.onClick(e))
+	if (bt_callThree.onClick(e))
 		s_call = 3;
 	else if (bt_callTwo.onClick(e))
 		s_call = 2;
@@ -247,13 +246,8 @@ void Player::callDizhu(Event& e)
 		dcd.s_call = s_call;
 		::sf::Packet packet;
 		packet << static_cast<int>(dcd.type()) << dcd;
-		while (!connector.sendNetworkEvent(packet))
-			::std::cout << "sending......\n";
-	}
-	else
-	{
-		clock_daojishi.update();
-		tDaojishi.setString(std::to_string(30 - clock_daojishi.second));
+		if (connector.sendNetworkEvent(packet))
+			::std::cout << "sended s_call......\n";
 	}
 }
 
@@ -261,18 +255,6 @@ void Player::show()
 {
 	(*app).draw(sMeg);
 	(*app).draw(sHead);
-	if (isMyTime)
-	{
-		bt_chupai.show();
-		bt_pass.show();
-	}
-	if (isCallingDizhu)
-	{
-		bt_callThree.show();
-		bt_callTwo.show();
-		bt_callOne.show();
-		bt_callNo.show();
-	}
 }
 
 AI::AI()

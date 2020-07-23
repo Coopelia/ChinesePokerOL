@@ -20,7 +20,7 @@ PukeManager::PukeManager()
 		dealTemp[i] = i;
 		puke_order[i] = 0;
 	}
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 21; i++)
 	{
 		deskCard[i] = -1;
 		seletedCard[i] = -1;
@@ -72,7 +72,7 @@ void PukeManager::clearAll()
 		dealTemp[i] = i;
 		puke_order[i] = 0;
 	}
-	for (int i = 0; i < 20; i++)
+	for (int i = 0; i < 21; i++)
 	{
 		deskCard[i] = -1;
 		seletedCard[i] = -1;

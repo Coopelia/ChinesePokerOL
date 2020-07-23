@@ -11,19 +11,20 @@ public:
 	void game_logic();
 	void setState(bool isPlaying);
 	void setID(int id);
-	void addPlayer(Customor* c);
-	void removePlayer(Customor* c);
+	void addPlayer(int id);
+	void removePlayer(int id);
+	void send_player_info();
 	int getNum();
 	bool getState();//isPlaying?
 	int getID();
-	::std::vector<Customor*> getPlayersList();
+	::std::vector<int> getPlayersList();
 	friend class Server;
 private:
 	int ID;//房间号
 	bool isPlaying;
 	bool isDealing;
 	bool isDealDizhu;
-	::std::vector<Customor*> players;//玩家
+	::std::vector<int> player_list;//玩家
 	::std::vector<int> dizhuCard;
 	::std::vector<int> tempCard;
 };

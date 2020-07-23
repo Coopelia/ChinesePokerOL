@@ -14,7 +14,7 @@ public:
 	::sf::TcpSocket& getSocketIn();
 	::sf::TcpSocket& getSocketOut();
 	void sendNetworkEvent(::sf::Packet packet);//调用这个函数发送信息
-	bool getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg);//调用这个函数获取信息
+	bool getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg);
 	::pt::NetworkEvent* proccessEvent();
 	static void pth_send(Customor* _this);
 	static void pth_recieve(Customor* _this);
@@ -33,6 +33,6 @@ private:
 	::std::queue<::sf::Packet> q_sender;//发送者消息队列
 	::sf::Mutex mt_s;//访问该队列的互斥锁
 
-	::std::list<::sf::Packet> q_reciever;//接收者消息队列
+	::std::queue<::sf::Packet> q_reciever;//接收者消息队列
 	::sf::Mutex mt_r;//访问该队列的互斥锁
 };

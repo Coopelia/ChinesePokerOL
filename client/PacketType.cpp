@@ -1,4 +1,4 @@
-#include "PacketType.hpp"
+#include "PacketType.h"
 
 namespace pt
 {
@@ -23,7 +23,7 @@ namespace pt
 
 	sf::Packet& operator<<(sf::Packet& packet, const NetworkEvent& self)
 	{
-		packet << sf::Uint8(self._type);
+		packet << int(self._type);
 		return packet;
 	}
 
@@ -98,7 +98,7 @@ namespace pt
 
 	sf::Packet& operator<<(sf::Packet& packet, const DaCallDec& self)
 	{
-		packet << ::sf::Uint8(self.s_call);
+		packet << self.s_call;
 		return packet;
 	}
 
@@ -109,23 +109,22 @@ namespace pt
 
 	sf::Packet& operator>>(sf::Packet& packet, DaChuDec& self)
 	{
-		::sf::Uint8 t;
+		int t;
 		packet >> t;
 		self.dec = DEC(t);
-		int i;
 		while (!packet.endOfPacket())
 		{
-			packet >> i;
-			self.cards.push_back(i);
+			packet >> t;
+			self.cards.push_back(t);
 		}
 		return packet;
 	}
 
 	sf::Packet& operator<<(sf::Packet& packet, const DaChuDec& self)
 	{
-		packet << ::sf::Uint8(self.dec);
-		for (auto p : self.cards)
-			packet << p;
+		packet << int(self.dec);
+		for (int i = 0; i < self.cards.size(); i++)
+			packet << self.cards[i];
 		return packet;
 	}
 
@@ -196,25 +195,21 @@ namespace pt
 	sf::Packet& operator>>(sf::Packet& packet, DaPlayerStateInfo_Chu& self)
 	{
 		packet >> self.player_turned_id;
-		::sf::Uint8 t;
+		int t;
 		packet >> t;
 		self.dec = DEC(t);
-		::std::pair<::std::pair<int, SF>, ::std::pair<int, ::std::vector<int>>> p;
-		::std::pair<int, SF> a;
-		::std::pair<int, ::std::vector<int>> b;
 		while (!packet.endOfPacket())
 		{
-			packet >> a.first;
+			::std::pair<::std::pair<int, SF>, ::std::pair<int, ::std::vector<int>>> p;
+			packet >> p.first.first;
 			packet >> t;
-			a.second = (SF)t;
-			packet >> b.first;
-			for (int i = 0; i < b.first; i++)
+			p.first.second = (SF)t;
+			packet >> p.second.first;
+			for (int i = 0; i < p.second.first; i++)
 			{
 				packet >> t;
-				b.second.push_back(t);
+				p.second.second.push_back(t);
 			}
-			p.first = a;
-			p.second = b;
 			self.playerInfo.push_back(p);
 		}
 		return packet;
@@ -223,10 +218,10 @@ namespace pt
 	sf::Packet& operator<<(sf::Packet& packet, const DaPlayerStateInfo_Chu& self)
 	{
 		packet << self.player_turned_id;
-		packet << ::sf::Uint8(self.dec);
+		packet << int(self.dec);
 		for (auto p : self.playerInfo)
 		{
-			packet << p.first.first << p.first.second;
+			packet << p.first.first <<int(p.first.second);
 			packet << p.second.first;
 			for (int i = 0; i < p.second.second.size(); i++)
 				packet << p.second.second[i];
@@ -252,7 +247,7 @@ namespace pt
 	}
 
 	/////////////////////////////// daDizhuCard ////////////////////
-	DaDizhuCard::DaDizhuCard() :NetworkEvent(::pt::daDeskCard)
+	DaDizhuCard::DaDizhuCard() :NetworkEvent(::pt::daDizhuCard)
 	{
 	}
 

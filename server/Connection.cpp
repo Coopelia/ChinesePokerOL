@@ -7,12 +7,13 @@ Connection::Connection()
 	listener.listen(port_self);
 	clientIdTurn = 1;
 	stop = false;
+	::std::cout << "host id: " << ::sf::IpAddress::getLocalAddress()<<::std::endl;
 }
 
 void Connection::Stop()
 {
 	this->stop = true;
-	::std::list<Customor*>::iterator itr;
+	::std::vector<Customor*>::iterator itr;
 	mt_c.lock();
 	for (itr = clients.begin(); itr != clients.end();)
 	{
@@ -52,7 +53,7 @@ void Connection::pth_update(Connection* _this)
 {
 	while (!_this->stop)
 	{
-		::std::list<Customor*>::iterator itr;
+		::std::vector<Customor*>::iterator itr;
 		mt_c.lock();
 		for (itr = clients.begin(); itr != clients.end();)
 		{

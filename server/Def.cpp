@@ -1,4 +1,4 @@
 #include"Def.h"
 
-::std::list<Customor*> clients;
+::std::vector<Customor*> clients;
 ::sf::Mutex mt_c;

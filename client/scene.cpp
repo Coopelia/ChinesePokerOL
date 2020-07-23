@@ -259,8 +259,6 @@ void StartScene::Update()
 	this->text_jb.setString(std::to_string(jb));
 	sBackground.setTexture(tBack[value_bg - 1]);
 	sBackMini.setTexture(tBack[value_bg - 1]);
-	if (bool_list["OnJoin"])
-		room_menu.update_room_list ();
 }
 
 void StartScene::draw_mail()
@@ -317,10 +315,12 @@ void StartScene::input_exit(Event& e)
 
 void StartScene::input_join(Event& e)
 {
+	if(room_menu.bt_update.onClick(e))
+		room_menu.update_room_list();
 	if (bt_join_exit.onClick(e))
 		bool_list["OnJoin"] = false;
 	roomId = room_menu.onClick(e);
-	if (roomId!=-1)
+	if (roomId != -1)
 	{
 		::std::cout << "加入了游戏：房间ID: " << roomId << ::std::endl;
 		bool_list["isExit"] = true;
@@ -808,6 +808,14 @@ void GameScene::Draw()
 	(*app).draw(ai_2.tNum_rest);
 	if (bool_list["isDealDizhu"])
 	{
+		//画叫分按钮
+		if (human.isCallingDizhu)
+		{
+			human.bt_callThree.show();
+			human.bt_callTwo.show();
+			human.bt_callOne.show();
+			human.bt_callNo.show();
+		}
 		human.sCall.setPosition(610, 430);
 		human.sCall.setScale(1, 1);
 		ai_1.sCall.setPosition(905, 150);
@@ -851,6 +859,11 @@ void GameScene::Draw()
 			puke_manager.puke.c[k][l].sprite.setScale(0.7, 0.7);
 			(*app).draw(puke_manager.puke.c[k][l].sprite);
 		}
+	}
+	if (human.isMyTime)
+	{
+		human.bt_chupai.show();
+		human.bt_pass.show();
 	}
 	//绘制出牌区
 	for (int i = 0; i < puke_manager.num_desk; i++)
@@ -996,7 +1009,7 @@ void GameScene::player_turn_input(Event& e)
 				ai_1.s_call = 0;
 				ai_2.s_call = 0;
 			}
-			else 
+			else
 				ai_1.isCallingDizhu = true;
 		}
 		if (ai_1.isCallingDizhu && ai_1.s_call == -1)
@@ -1031,7 +1044,7 @@ void GameScene::player_turn_input(Event& e)
 			if (human.s_call == 0 && ai_1.s_call == 0 && ai_2.s_call == 0)
 			{
 				bool_list["isDealing"] = true;
-				bool_list ["isDealDizhu"] = false;
+				bool_list["isDealDizhu"] = false;
 				human.s_call = -1;
 				ai_1.s_call = -1;
 				ai_2.s_call = -1;
@@ -1257,7 +1270,7 @@ void GameScene::Input(Event& e)
 		if (isRhythm && bool_list["isDealing"])
 			input_rhythm(e);
 	}
-	if(bool_list["isShowOver"])
+	if (bool_list["isShowOver"])
 	{
 		if (bt_over_back.onClick(e))
 			bool_list["isShowOver"] = false;
@@ -1292,6 +1305,8 @@ GameSceneOL::GameSceneOL()
 	bool_list.insert(::std::pair<::std::string, bool>("isPlayed_sd", false));
 	bool_list.insert(::std::pair<::std::string, bool>("	isShowOver", false));
 	bool_list.insert(::std::pair<::std::string, bool>("	isGaming", false));
+
+	human_self.playerId = connector.hostId();
 
 	puke_manager.human_self = &this->human_self;
 	puke_manager.human_1 = &this->human_1;
@@ -1393,12 +1408,6 @@ void GameSceneOL::Start()
 	bgm.play();
 	human_self.playerId = connector.hostId();
 	human_self.isReady = true;
-	player_turned_id = 0;
-	::pt::ReReady rr;
-	::sf::Packet packet;
-	packet << static_cast<int>(rr.type()) << rr;
-	while (!connector.sendNetworkEvent(packet))
-		::std::cout << "send ready state....\n";
 }
 
 void GameSceneOL::Update()
@@ -1409,13 +1418,23 @@ void GameSceneOL::Update()
 	human_self.update();
 	human_1.update();
 	human_2.update();
+
+	::pt::NetworkEvent* drl = nullptr;
+	if (connector.getNetworkEvent(::pt::daRoomList, drl, false))
+		delete drl;
+	::pt::NetworkEvent* re = nullptr;
+	if (connector.getNetworkEvent(::pt::reJoinRoom, re, false))
+		delete re;
+
 	::pt::NetworkEvent* dgs = nullptr;
-	if (connector.getNetworkEvent(::pt::daGameState, dgs))
+	if (connector.getNetworkEvent(::pt::daGameState, dgs, false))
 	{
 		switch (static_cast<::pt::DaGameState*>(dgs)->gsta)
 		{
 		case Ready:
 			bool_list["isGaming"] = false;
+			bool_list["isDealing"] = false;
+			bool_list["isDealDizhu"] = false;
 			::std::cout << "get game state---ready\n";
 			break;
 		case Deal:
@@ -1435,6 +1454,9 @@ void GameSceneOL::Update()
 			bool_list["isDealing"] = false;
 			bool_list["isDealDizhu"] = false;
 			bool_list["isPlaying"] = true;
+			human_self.isCallingDizhu = false;
+			human_1.isCallingDizhu = false;
+			human_2.isCallingDizhu = false;
 			::std::cout << "get game state---play\n";
 			break;
 		default:
@@ -1442,165 +1464,153 @@ void GameSceneOL::Update()
 		}
 		delete dgs;
 	}
-	if (bool_list["isGaming"])
+
+	puke_manager.deal();
+
+	::pt::NetworkEvent* dpsc = nullptr;
+	if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Call, dpsc, false))
 	{
-		if (bool_list["isDealing"])
+		human_self.isMyTime = false;
+		human_1.isMyTime = false;
+		human_2.isMyTime = false;
+		::std::cout << "get player state information_call......\n";
+		int pid = static_cast<::pt::DaPlayerStateInfo_Call*>(dpsc)->player_turned_id;
+		int sc = static_cast<::pt::DaPlayerStateInfo_Call*>(dpsc)->s_call;
+		if (pid != puke_manager.player_turned_id)
 		{
-			if (!bool_list["isDealDizhu"])
+			::std::cout << "player turned :id--" << pid << "---called: " << sc << "\n";
+			puke_manager.player_turned_id = pid;
+			if (pid == human_self.playerId)
 			{
-				/*if (puke_manager.clock_deal.isRun == false)
-					puke_manager.clock_deal.start();
-				puke_manager.clock_deal.update();
-				if (puke_manager.clock_deal.minTime >= 300)
-				{
-					puke_manager.deal();
-					puke_manager.clock_deal.restart();
-				}*/
-				puke_manager.deal();
+				human_self.clock_daojishi.start();
+				human_self.isCallingDizhu = true;
+				human_self.s_call = sc;
+				human_1.isCallingDizhu = false;
+				human_2.isCallingDizhu = false;
+			}
+			else if (pid == human_1.playerId)
+			{
+				human_1.clock_daojishi.start();
+				human_1.isCallingDizhu = true;
+				human_1.s_call = sc;
+				human_self.isCallingDizhu = false;
+				human_2.isCallingDizhu = false;
+			}
+			else if (pid == human_2.playerId)
+			{
+				human_2.clock_daojishi.start();
+				human_2.isCallingDizhu = true;
+				human_2.s_call = sc;
+				human_1.isCallingDizhu = false;
+				human_self.isCallingDizhu = false;
+			}
+
+			puke_manager.player_turned_id = pid;
+		}
+		delete dpsc;
+	}
+
+	//判断游戏是否结束
+	::pt::NetworkEvent* nwe = nullptr;
+	if (connector.getNetworkEvent(::pt::daGameOver, nwe, false))
+	{
+		::std::cout << "get gameover message......\n";
+		bool_list["isGameover"] = true;
+		::pt::ReUnReady rur;
+		::sf::Packet packet;
+		packet << static_cast<int>(rur.type()) << rur;
+		while (!connector.sendNetworkEvent(packet))
+			::std::cout << "send unready request......\n";
+		if (static_cast<::pt::DaGameOver*>(nwe)->winner_id == human_self.playerId)
+			human_self.isWin = true;
+		else if (static_cast<::pt::DaGameOver*>(nwe)->winner_id == human_1.playerId)
+			human_1.isWin = true;
+		else if (static_cast<::pt::DaGameOver*>(nwe)->winner_id == human_2.playerId)
+			human_2.isWin = true;
+		delete nwe;
+	}
+	if (bool_list["isGameover"])
+	{
+		if (!bool_list["isPlayed_sd"])//如果是第一次执行以下代码
+		{
+			text_over.setString(std::to_string(score * 100));
+			if (human_self.isWin)
+			{
+				text_over.setFillColor(Color::Yellow);
+				jb += score * 100;
+				sOver.setTexture(tOver[0]);
+				mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Win.ogg");
 			}
 			else
 			{
-				::pt::NetworkEvent* dpsc = nullptr;
-				if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Call, dpsc))
-				{
-					::std::cout << "get player state information......\n";
-					int pid = static_cast<::pt::DaPlayerStateInfo_Call*>(dpsc)->player_turned_id;
-					int sc= static_cast<::pt::DaPlayerStateInfo_Call*>(dpsc)->s_call;
-					if (pid != player_turned_id)
-					{
-						player_turned_id = pid;
-						clock_showCall.restart();
-					}
-					if (pid == human_self.playerId)
-					{
-						human_self.isCallingDizhu = true;
-						human_self.s_call = sc;
-						human_1.isCallingDizhu = false;
-						human_2.isCallingDizhu = false;
-					}
-					else if (pid == human_1.playerId)
-					{
-						human_1.isCallingDizhu = true;
-						human_1.s_call = sc;
-						human_self.isCallingDizhu = false;
-						human_2.isCallingDizhu = false;
-					}
-					else if (pid == human_2.playerId)
-					{
-						human_2.isCallingDizhu = true;
-						human_2.s_call = sc;
-						human_1.isCallingDizhu = false;
-						human_self.isCallingDizhu = false;
-					}
-					delete dpsc;
-				}
-			}
-		}
-		else if (bool_list["isPlaying"])
-		{
-			player_turned_id = puke_manager.player_turned_id;
-
-			//判断游戏是否结束
-			::pt::NetworkEvent* nwe = nullptr;
-			if (connector.getNetworkEvent(::pt::daGameOver, nwe))
-			{
-				::std::cout << "get gameover message......\n";
-				bool_list["isGameover"] = true;
-				::pt::ReUnReady rur;
-				::sf::Packet packet;
-				packet << static_cast<int>(rur.type()) << rur;
-				while (!connector.sendNetworkEvent(packet))
-					::std::cout << "send unready request......\n";
-				if (static_cast<::pt::DaGameOver*>(nwe)->winner_id == human_self.playerId)
-					human_self.isWin = true;
-				else if (static_cast<::pt::DaGameOver*>(nwe)->winner_id == human_1.playerId)
-					human_1.isWin = true;
-				else if (static_cast<::pt::DaGameOver*>(nwe)->winner_id == human_2.playerId)
-					human_2.isWin = true;
-				delete nwe;
-			}
-		}
-		if (bool_list["isGameover"])
-		{
-			if (!bool_list["isPlayed_sd"])//如果是第一次执行以下代码
-			{
-				text_over.setString(std::to_string(score * 100));
-				if (human_self.isWin)
-				{
-					text_over.setFillColor(Color::Yellow);
-					jb += score * 100;
-					sOver.setTexture(tOver[0]);
-					mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Win.ogg");
-				}
-				else
-				{
-					text_over.setFillColor(Color::Cyan);
-					jb -= score * 100;
-					sOver.setTexture(tOver[1]);
-					mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Lose.ogg");
-				}
+				text_over.setFillColor(Color::Cyan);
+				jb -= score * 100;
+				sOver.setTexture(tOver[1]);
+				mu_over.openFromFile("assets/Sound/MusicEx/MusicEx_Lose.ogg");
 			}
 		}
 	}
-	else
+
+	::pt::NetworkEvent* nwe2 = nullptr;
+	if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Ready, nwe2, true))
 	{
-		::pt::NetworkEvent* nwe = nullptr;
-		if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Ready, nwe))
+		::std::cout << "get player state information......\n";
+		::std::vector<::std::pair<int, bool>> p;
+		for (int i = 0; i < static_cast<::pt::DaPlayerStateInfo_Ready*>(nwe2)->isReady.size(); i++)
+			p.push_back(static_cast<::pt::DaPlayerStateInfo_Ready*>(nwe2)->isReady[i]);
+		if (p.size() == 2)
 		{
-			::std::cout << "get player state information......\n";
-			::std::vector<::std::pair<int, bool>> p;
-			for (int i = 0; i < static_cast<::pt::DaPlayerStateInfo_Ready*>(nwe)->isReady.size(); i++)
-				p.push_back(static_cast<::pt::DaPlayerStateInfo_Ready*>(nwe)->isReady[i]);
-			if (p.size() == 2)
+			if (human_self.playerId == p[0].first)
 			{
-				if (human_self.playerId == p[0].first)
-				{
-					human_1.playerId = p[1].first;
-					human_1.isReady = p[1].second;
-				}
-				else
-				{
-					human_1.playerId = p[0].first;
-					human_1.isReady = p[0].second;
-				}
+				human_1.playerId = p[1].first;
+				human_1.isReady = p[1].second;
 				human_2.isReady = false;
-			}
-			else if (p.size() == 3)
-			{
-				if (human_self.playerId == p[0].first)
-				{
-					human_1.playerId = p[1].first;
-					human_1.isReady = p[1].second;
-					human_2.playerId = p[2].first;
-					human_2.isReady = p[2].second;
-				}
-				else if(human_self.playerId==p[1].first)
-				{
-					human_1.playerId = p[2].first;
-					human_1.isReady = p[2].second;
-					human_2.playerId = p[0].first;
-					human_2.isReady = p[0].second;
-				}
-				else
-				{
-					human_1.playerId = p[0].first;
-					human_1.isReady = p[0].second;
-					human_2.playerId = p[1].first;
-					human_2.isReady = p[1].second;
-				}
 			}
 			else
 			{
+				human_2.playerId = p[0].first;
+				human_2.isReady = p[0].second;
 				human_1.isReady = false;
-				human_2.isReady = false;
 			}
-			delete nwe;
 		}
+		else if (p.size() == 3)
+		{
+			if (human_self.playerId == p[0].first)
+			{
+				human_1.playerId = p[1].first;
+				human_1.isReady = p[1].second;
+				human_2.playerId = p[2].first;
+				human_2.isReady = p[2].second;
+			}
+			else if (human_self.playerId == p[1].first)
+			{
+				human_1.playerId = p[2].first;
+				human_1.isReady = p[2].second;
+				human_2.playerId = p[0].first;
+				human_2.isReady = p[0].second;
+			}
+			else
+			{
+				human_1.playerId = p[0].first;
+				human_1.isReady = p[0].second;
+				human_2.playerId = p[1].first;
+				human_2.isReady = p[1].second;
+			}
+		}
+		else
+		{
+			human_1.isReady = false;
+			human_2.isReady = false;
+		}
+		delete nwe2;
+		::std::cout << "player_self:" << human_self.playerId << "\n";
+		::std::cout << "player_right:" << human_1.playerId << "\n";
+		::std::cout << "player_left:" << human_2.playerId << "\n";
 	}
 
 	//更新倍数
 	::pt::NetworkEvent* dbs = nullptr;
-	if (connector.getNetworkEvent(::pt::daBeishu, dbs))
+	if (connector.getNetworkEvent(::pt::daBeishu, dbs, false))
 	{
 		::std::cout << "update score......\n";
 		score = static_cast<::pt::DaBeishu*>(dbs)->beishu;
@@ -1640,6 +1650,15 @@ void GameSceneOL::Draw()
 	(*app).draw(human_2.tNum_rest);
 	if (bool_list["isDealDizhu"])
 	{
+		//画叫分按钮
+		if (human_self.isCallingDizhu)
+		{
+			human_self.bt_callThree.show();
+			human_self.bt_callTwo.show();
+			human_self.bt_callOne.show();
+			human_self.bt_callNo.show();
+		}
+		//画分
 		human_self.sCall.setPosition(610, 430);
 		human_self.sCall.setScale(1, 1);
 		human_1.sCall.setPosition(905, 150);
@@ -1650,46 +1669,25 @@ void GameSceneOL::Draw()
 		(*app).draw(human_1.sCall);
 		(*app).draw(human_2.sCall);
 	}
-	if (isRhythm && bool_list["isDealing"])
-	{
-		sDealBg.setPosition(0, 0);
-		(*app).draw(sDealBg);
-		sF.setPosition(440, 600);
-		sG.setPosition(540, 600);
-		sH.setPosition(640, 600);
-		sJ.setPosition(740, 600);
-		for (int i = 0; i < 54; i++)
-			(*app).draw(puke_manager.puke.c[i / 4][i % 4].sprite);
-		(*app).draw(sF);
-		(*app).draw(sG);
-		(*app).draw(sH);
-		(*app).draw(sJ);
-		for (int i = 0; i < human_self.num_card; i++)
-		{
-			int k = human_self.hand_card[i] / 4;
-			int l = human_self.hand_card[i] % 4;
-			puke_manager.puke.c[k][l].sprite.setPosition((i % 4) * 70 + 30, (i / 4) * 120 + 100);
-			puke_manager.puke.c[k][l].sprite.setScale(0.5, 0.5);
-			(*app).draw(puke_manager.puke.c[k][l].sprite);
-		}
-	}
 	//绘制玩家扑克牌
-	if (!isRhythm)
+	for (int i = 0; i < human_self.num_card; i++)
 	{
-		for (int i = 0; i < human_self.num_card; i++)
-		{
-			int k = human_self.hand_card[i] / 4;
-			int l = human_self.hand_card[i] % 4;
-			puke_manager.puke.c[k][l].sprite.setScale(0.7, 0.7);
-			(*app).draw(puke_manager.puke.c[k][l].sprite);
-		}
+		int k = human_self.hand_card[i] / 4;
+		int l = human_self.hand_card[i] % 4;
+		puke_manager.puke.c[k][l].sprite.setScale(0.7, 0.7);
+		(*app).draw(puke_manager.puke.c[k][l].sprite);
 	}
 	//绘制出牌区
-	for (int i = 0; i < puke_manager.deskCard.size(); i++)
+	for (int i = 0; i < puke_manager.num_desk; i++)
 	{
 		int k = puke_manager.deskCard[i] / 4;
 		int l = puke_manager.deskCard[i] % 4;
 		(*app).draw(puke_manager.puke.c[k][l].sprite);
+	}
+	if (human_self.isMyTime)
+	{
+		human_self.bt_chupai.show();
+		human_self.bt_pass.show();
 	}
 	//过
 	if (human_self.dec == PASS)
@@ -1708,27 +1706,33 @@ void GameSceneOL::Draw()
 		(*app).draw(human_2.sNoCard);
 	}
 	//画倒计时
-	if (human_self.isMyTime)
+	if (human_self.isMyTime || human_self.isCallingDizhu)
 	{
+		human_self.clock_daojishi.update();
 		human_self.sClock.setScale(0.8, 0.8);
 		human_self.sClock.setPosition(620, 372);
 		human_self.tDaojishi.setPosition(649, 402);
+		human_self.tDaojishi.setString(std::to_string(30 - human_self.clock_daojishi.second));
 		(*app).draw(human_self.sClock);
 		(*app).draw(human_self.tDaojishi);
 	}
-	if (human_1.isMyTime)
+	if (human_1.isMyTime || human_1.isCallingDizhu)
 	{
+		human_1.clock_daojishi.update();
 		human_1.sClock.setScale(0.8, 0.8);
 		human_1.sClock.setPosition(902, 167);
 		human_1.tDaojishi.setPosition(930, 197);
+		human_1.tDaojishi.setString(std::to_string(30 - human_1.clock_daojishi.second));
 		(*app).draw(human_1.sClock);
 		(*app).draw(human_1.tDaojishi);
 	}
-	if (human_2.isMyTime)
+	if (human_2.isMyTime || human_2.isCallingDizhu)
 	{
+		human_2.clock_daojishi.update();
 		human_2.sClock.setScale(0.8, 0.8);
 		human_2.sClock.setPosition(280, 167);
 		human_2.tDaojishi.setPosition(309, 197);
+		human_2.tDaojishi.setString(std::to_string(30 - human_2.clock_daojishi.second));
 		(*app).draw(human_2.sClock);
 		(*app).draw(human_2.tDaojishi);
 	}
@@ -1810,13 +1814,13 @@ void GameSceneOL::player_turn_input(Event& e)
 	//叫地主阶段
 	if (bool_list["isDealDizhu"])
 	{
-		if (human_self.isCallingDizhu && human_self.s_call == -1)
+		if (human_self.isCallingDizhu)
 			human_self.callDizhu(e);
 	}
 	//出牌阶段
-	else if (human_self.isMyTime)
+	else if (bool_list["isPlaying"] && human_self.isMyTime)
 	{
-		if (human_self.clock_daojishi.second > 30|| human_self.bt_pass.onClick(e))
+		if (human_self.clock_daojishi.second > 30 || human_self.bt_pass.onClick(e))
 		{
 			human_self.dec = PASS;
 			::pt::DaChuDec dcd;
@@ -1901,7 +1905,14 @@ void GameSceneOL::Input(Event& e)
 		if (bt_over_back.onClick(e))
 			bool_list["isShowOver"] = false;
 		if (bt_over_restart.onClick(e))
+		{
 			Start();
+			::pt::ReReady rr;
+			::sf::Packet packet;
+			packet << static_cast<int>(rr.type()) << rr;
+			if (connector.sendNetworkEvent(packet))
+				::std::cout << "send ready state....\n";
+		}
 	}
 	else
 	{
@@ -1911,7 +1922,7 @@ void GameSceneOL::Input(Event& e)
 			::pt::ReExitRoom rer;
 			::sf::Packet packet;
 			packet << static_cast<int>(rer.type()) << rer;
-			while(!connector.sendNetworkEvent(packet))
+			while (!connector.sendNetworkEvent(packet))
 				::std::cout << "连接中......\n";
 		}
 	}

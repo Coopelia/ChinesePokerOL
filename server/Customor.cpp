@@ -60,104 +60,102 @@ void Customor::sendNetworkEvent(::sf::Packet packet)
 
 bool Customor::getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg)
 {
-	::std::list<::sf::Packet>::iterator itr;
+	if (q_reciever.empty())
+		return false;
 	::sf::Packet packet;
 	int i;
 	mt_r.lock();
-	for (itr = q_reciever.begin(); itr != q_reciever.end(); itr++)
+	packet = q_reciever.front();
+	packet >> i;
+	::pt::MSG_TYPE _type = static_cast<::pt::MSG_TYPE>(i);
+	if (_type == type)
 	{
-		packet = (*itr);
-		packet >> i;
-		::pt::MSG_TYPE _type = static_cast<::pt::MSG_TYPE>(i);
-		if (_type == type)
+		switch (type)
 		{
-			switch (type)
-			{
-			case pt::reNull:
-				break;
-			case pt::reConnect:
-				msg = new ::pt::ReConnect();
-				break;
-			case pt::reDisconnect:
-				msg = new ::pt::ReDisconnect();
-				break;
-			case pt::reGetRoomList:
-				msg = new ::pt::ReGetRoomList();
-				break;
-			case pt::reCreatRoom:
-				msg = new ::pt::ReCreatRoom();
-				break;
-			case pt::reJoinRoom:
-				msg = new ::pt::ReJoinRoom(0);
-				packet >> (*static_cast<::pt::ReJoinRoom*>(msg));
-				break;
-			case pt::reReady:
-				msg = new ::pt::ReReady();
-				break;
-			case pt::reUnReady:
-				msg = new ::pt::ReUnReady();
-				break;
-			case pt::reExitRoom:
-				msg = new ::pt::ReExitRoom();
-				break;
-			case pt::reClearDeskCard:
-				msg = new ::pt::ReClearDeskCard();
-				break;
-			case pt::daCallDec:
-				msg = new ::pt::DaCallDec();
-				packet >> (*static_cast<::pt::DaCallDec*>(msg));
-				break;
-			case pt::daChuDec:
-				msg = new ::pt::DaChuDec();
-				packet >> (*static_cast<::pt::DaChuDec*>(msg));
-				break;
-			case pt::daGameState:
-				msg = new ::pt::DaGameState();
-				packet >> (*static_cast<::pt::DaGameState*>(msg));
-				break;
-			case pt::daPlayerStateInfo_Ready:
-				msg = new ::pt::DaPlayerStateInfo_Ready();
-				packet >> (*static_cast<::pt::DaPlayerStateInfo_Ready*>(msg));
-				break;
-			case pt::daPlayerStateInfo_Call:
-				msg = new ::pt::DaPlayerStateInfo_Call();
-				packet >> (*static_cast<::pt::DaPlayerStateInfo_Call*>(msg));
-				break;
-			case pt::daPlayerStateInfo_Chu:
-				msg = new ::pt::DaPlayerStateInfo_Chu();
-				packet >> (*static_cast<::pt::DaPlayerStateInfo_Chu*>(msg));
-				break;
-			case pt::daBeishu:
-				msg = new ::pt::DaBeishu();
-				packet >> (*static_cast<::pt::DaBeishu*>(msg));
-				break;
-			case pt::daDizhuCard:
-				msg = new ::pt::DaDizhuCard();
-				packet >> (*static_cast<::pt::DaDizhuCard*>(msg));
-				break;
-			case pt::daDeskCard:
-				msg = new ::pt::DaDeskCard();
-				packet >> (*static_cast<::pt::DaDeskCard*>(msg));
-				break;
-			case pt::daGameOver:
-				msg = new ::pt::DaGameOver();
-				packet >> (*static_cast<::pt::DaGameOver*>(msg));
-				break;
-			case pt::daRoomList:
-				msg = new ::pt::DaRoomList();
-				packet >> (*static_cast<::pt::DaRoomList*>(msg));
-				break;
-			case pt::daDealCard:
-				msg = new ::pt::DaDealCard();
-				packet >> (*static_cast<::pt::DaDealCard*>(msg));
-				break;
-			default:
-				break;
-			}
-			q_reciever.erase(itr);
+		case pt::reNull:
+			break;
+		case pt::reConnect:
+			msg = new ::pt::ReConnect();
+			break;
+		case pt::reDisconnect:
+			msg = new ::pt::ReDisconnect();
+			break;
+		case pt::reGetRoomList:
+			msg = new ::pt::ReGetRoomList();
+			break;
+		case pt::reCreatRoom:
+			msg = new ::pt::ReCreatRoom();
+			break;
+		case pt::reJoinRoom:
+			msg = new ::pt::ReJoinRoom(0);
+			packet >> (*static_cast<::pt::ReJoinRoom*>(msg));
+			break;
+		case pt::reReady:
+			msg = new ::pt::ReReady();
+			break;
+		case pt::reUnReady:
+			msg = new ::pt::ReUnReady();
+			break;
+		case pt::reExitRoom:
+			msg = new ::pt::ReExitRoom();
+			break;
+		case pt::reClearDeskCard:
+			msg = new ::pt::ReClearDeskCard();
+			break;
+		case pt::daCallDec:
+			msg = new ::pt::DaCallDec();
+			packet >> (*static_cast<::pt::DaCallDec*>(msg));
+			break;
+		case pt::daChuDec:
+			msg = new ::pt::DaChuDec();
+			packet >> (*static_cast<::pt::DaChuDec*>(msg));
+			break;
+		case pt::daGameState:
+			msg = new ::pt::DaGameState();
+			packet >> (*static_cast<::pt::DaGameState*>(msg));
+			break;
+		case pt::daPlayerStateInfo_Ready:
+			msg = new ::pt::DaPlayerStateInfo_Ready();
+			packet >> (*static_cast<::pt::DaPlayerStateInfo_Ready*>(msg));
+			break;
+		case pt::daPlayerStateInfo_Call:
+			msg = new ::pt::DaPlayerStateInfo_Call();
+			packet >> (*static_cast<::pt::DaPlayerStateInfo_Call*>(msg));
+			break;
+		case pt::daPlayerStateInfo_Chu:
+			msg = new ::pt::DaPlayerStateInfo_Chu();
+			packet >> (*static_cast<::pt::DaPlayerStateInfo_Chu*>(msg));
+			break;
+		case pt::daBeishu:
+			msg = new ::pt::DaBeishu();
+			packet >> (*static_cast<::pt::DaBeishu*>(msg));
+			break;
+		case pt::daDizhuCard:
+			msg = new ::pt::DaDizhuCard();
+			packet >> (*static_cast<::pt::DaDizhuCard*>(msg));
+			break;
+		case pt::daDeskCard:
+			msg = new ::pt::DaDeskCard();
+			packet >> (*static_cast<::pt::DaDeskCard*>(msg));
+			break;
+		case pt::daGameOver:
+			msg = new ::pt::DaGameOver();
+			packet >> (*static_cast<::pt::DaGameOver*>(msg));
+			break;
+		case pt::daRoomList:
+			msg = new ::pt::DaRoomList();
+			packet >> (*static_cast<::pt::DaRoomList*>(msg));
+			break;
+		case pt::daDealCard:
+			msg = new ::pt::DaDealCard();
+			packet >> (*static_cast<::pt::DaDealCard*>(msg));
+			break;
+		default:
 			break;
 		}
+		q_reciever.pop();
 	}
+
 	mt_r.unlock();
 	if (msg == nullptr)
 		return false;
@@ -177,15 +175,12 @@ bool Customor::getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg)
 		switch (type)
 		{
 		case pt::reNull:
-			q_reciever.pop_front();
 			break;
 		case pt::reConnect:
 			msg = new ::pt::ReConnect();
-			q_reciever.pop_front();
 			break;
 		case pt::reDisconnect:
 			msg = new ::pt::ReDisconnect();
-			q_reciever.pop_front();
 			break;
 		case pt::reGetRoomList:
 			msg = new ::pt::ReGetRoomList();
@@ -199,83 +194,68 @@ bool Customor::getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg)
 			break;
 		case pt::reReady:
 			msg = new ::pt::ReReady();
-			q_reciever.pop_front();
 			break;
 		case pt::reUnReady:
 			msg = new ::pt::ReUnReady();
-			q_reciever.pop_front();
 			break;
 		case pt::reExitRoom:
 			msg = new ::pt::ReExitRoom();
-			q_reciever.pop_front();
 			break;
 		case pt::reClearDeskCard:
 			msg = new ::pt::ReClearDeskCard();
-			q_reciever.pop_front();
 			break;
 		case pt::daCallDec:
 			msg = new ::pt::DaCallDec();
 			packet >> (*static_cast<::pt::DaCallDec*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daChuDec:
 			msg = new ::pt::DaChuDec();
 			packet >> (*static_cast<::pt::DaChuDec*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daGameState:
 			msg = new ::pt::DaGameState();
 			packet >> (*static_cast<::pt::DaGameState*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daPlayerStateInfo_Ready:
 			msg = new ::pt::DaPlayerStateInfo_Ready();
 			packet >> (*static_cast<::pt::DaPlayerStateInfo_Ready*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daPlayerStateInfo_Call:
 			msg = new ::pt::DaPlayerStateInfo_Call();
 			packet >> (*static_cast<::pt::DaPlayerStateInfo_Call*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daPlayerStateInfo_Chu:
 			msg = new ::pt::DaPlayerStateInfo_Chu();
 			packet >> (*static_cast<::pt::DaPlayerStateInfo_Chu*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daBeishu:
 			msg = new ::pt::DaBeishu();
 			packet >> (*static_cast<::pt::DaBeishu*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daDizhuCard:
 			msg = new ::pt::DaDizhuCard();
 			packet >> (*static_cast<::pt::DaDizhuCard*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daDeskCard:
 			msg = new ::pt::DaDeskCard();
 			packet >> (*static_cast<::pt::DaDeskCard*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daGameOver:
 			msg = new ::pt::DaGameOver();
 			packet >> (*static_cast<::pt::DaGameOver*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daRoomList:
 			msg = new ::pt::DaRoomList();
 			packet >> (*static_cast<::pt::DaRoomList*>(msg));
-			q_reciever.pop_front();
 			break;
 		case pt::daDealCard:
 			msg = new ::pt::DaDealCard();
 			packet >> (*static_cast<::pt::DaDealCard*>(msg));
-			q_reciever.pop_front();
 			break;
 		default:
 			break;
 		}
+		q_reciever.pop();
 	}
 	mt_r.unlock();
 	return msg;
@@ -323,13 +303,15 @@ void Customor::pth_recieve(Customor* _this)
 		::sf::Packet pt = packet;
 		int i;
 		pt >> i;
+	/*	if (i == 10)
+			i = 10;*/
 		if (i == 886)
 		{
 			_this->isConnected = false;
 			return;
 		}
 		_this->mt_r.lock();
-		_this->q_reciever.push_back(packet);
+		_this->q_reciever.push(packet);
 		_this->mt_r.unlock();
 	}
 }

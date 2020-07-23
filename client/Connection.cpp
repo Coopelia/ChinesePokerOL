@@ -2,8 +2,10 @@
 
 Connection::Connection()
 {
-	//host_ip = ::sf::IpAddress::getLocalAddress();
-	host_ip = "60.176.45.108";
+	host_ip = ::sf::IpAddress::getLocalAddress();
+	//host_ip = "192.168.1.100";
+	//host_ip = "60.176.43.85";
+	//host_ip = "a3299149c7.qicp.vip";
 	port_self = 5688;
 	port_host = 5678;
 	timeout = ::sf::seconds(5);
@@ -77,12 +79,13 @@ bool Connection::sendNetworkEvent(::sf::Packet packet)
 		return false;
 	mt_s.lock();
 	q_sender.push(packet);
+	::std::cout << "-------push a msg-------\n";
 	mt_s.unlock();
 
 	return true;
 }
 
-bool Connection::getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg)
+bool Connection::getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg, bool fg)
 {
 	::std::list<::sf::Packet>::iterator itr;
 	::sf::Packet packet;
@@ -181,6 +184,8 @@ bool Connection::getNetworkEvent(::pt::MSG_TYPE type, ::pt::NetworkEvent*& msg)
 			q_reciever.erase(itr);
 			break;
 		}
+		if (!fg)
+			break;
 	}
 	mt_r.unlock();
 	if (msg == nullptr)
@@ -199,8 +204,9 @@ void Connection::receiveEvent()
 
 void Connection::sendEvent()
 {
-	mt_s.lock();
 	socket_out.send(q_sender.front());
+	::std::cout << "-------send a msg-------\n";
+	mt_s.lock();
 	q_sender.pop();
 	mt_s.unlock();
 }

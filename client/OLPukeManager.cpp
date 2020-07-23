@@ -6,10 +6,16 @@ OLPukeManager::OLPukeManager()
 	puke_dt_e = 0;
 	puke_chupai_lx = 640;
 	puke_chupai_dx = 50;
+	num_desk = 0;
+	num_seleted = 0;
 	this->human_self = NULL;
 	this->human_1 = NULL;
 	this->human_2 = NULL;
-
+	for (int i = 0; i < 21; i++)
+	{
+		deskCard[i] = -1;
+		seletedCard[i] = -1;
+	}
 }
 
 void OLPukeManager::start()
@@ -21,60 +27,98 @@ void OLPukeManager::update()
 {
 	//更新房间中玩家的状态信息
 	::pt::NetworkEvent* dpsic = nullptr;
-	if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Chu, dpsic))
+	if (connector.getNetworkEvent(::pt::daPlayerStateInfo_Chu, dpsic, false))
 	{
-		if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id != player_turned_id)
+		if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id != -1)
 		{
-			if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id == human_self->playerId)
+			int pid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id;
+
+			if (pid == human_self->playerId)
 			{
 				human_self->isMyTime = true;
-				human_self->clock_daojishi.restart();
-				human_self->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 				human_1->isMyTime = false;
 				human_2->isMyTime = false;
+				human_self->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 			}
-			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id == human_1->playerId)
+			else if (pid == human_1->playerId)
 			{
 				human_self->isMyTime = false;
 				human_1->isMyTime = true;
-				human_1->clock_daojishi.restart();
-				human_1->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 				human_2->isMyTime = false;
+				human_1->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 			}
-			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id == human_2->playerId)
+			else if (pid == human_2->playerId)
 			{
 				human_self->isMyTime = false;
 				human_1->isMyTime = false;
 				human_2->isMyTime = true;
-				human_2->clock_daojishi.restart();
 				human_2->dec = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->dec;
 			}
-			player_turned_id = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->player_turned_id;
+
+			if (pid != player_turned_id)
+			{
+				::std::cout << "player turned :id--" << pid << "\n";
+				if (pid == human_self->playerId)
+				{
+					human_self->clock_daojishi.restart();
+				}
+				else if (pid == human_1->playerId)
+				{
+					human_1->clock_daojishi.restart();
+				}
+				else if (pid == human_2->playerId)
+				{
+					human_2->clock_daojishi.restart();
+				}
+				player_turned_id = pid;
+			}
 		}
 
 		//更新玩家手牌和身份
-		for (int i = 0; i < static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo.size(); i++)
+		::std::vector<::std::pair<::std::pair<int, SF>, ::std::pair<int, ::std::vector<int>>>> info = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo;
+		for (auto p : info)
 		{
-			if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.first == human_self->playerId)
+			if (p.first.first == human_self->playerId)
 			{
-				human_self->num_card = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.first;
-				human_self->sid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.second;
+				//::std::cout << "human_self id" << p.first.first << " cards: ";
+				human_self->num_card = p.second.first;
+				human_self->sid = p.first.second;
+				for (int i = 0; i < 20; i++)
+					human_self->hand_card[i] = -1;
 				for (int i = 0; i < human_self->num_card; i++)
-					human_self->hand_card[i] = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.second[i];
+				{
+					human_self->hand_card[i] = p.second.second[i];
+					//::std::cout << p.second.second[i] << " ";
+				}
+				//::std::cout << "\n";
 			}
-			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.first == human_1->playerId)
+			else if (p.first.first == human_1->playerId)
 			{
-				human_1->num_card = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.first;
-				human_1->sid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.second;
+				//::std::cout << "human_right id" << p.first.first << " cards: ";
+				human_1->num_card = p.second.first;
+				human_1->sid = p.first.second;
+				for (int i = 0; i < 20; i++)
+					human_1->hand_card[i] = -1;
 				for (int i = 0; i < human_1->num_card; i++)
-					human_1->hand_card[i] = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.second[i];
+				{
+					human_1->hand_card[i] = p.second.second[i];
+					//::std::cout << p.second.second[i] << " ";
+				}
+				//::std::cout << "\n";
 			}
-			else if (static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.first == human_2->playerId)
+			else if (p.first.first == human_2->playerId)
 			{
-				human_2->num_card = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.first;
-				human_2->sid = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].first.second;
+				//::std::cout << "human_left id" << p.first.first << " cards: ";
+				human_2->num_card = p.second.first;
+				human_2->sid = p.first.second;
+				for (int i = 0; i < 20; i++)
+					human_2->hand_card[i] = -1;
 				for (int i = 0; i < human_2->num_card; i++)
-					human_2->hand_card[i] = static_cast<::pt::DaPlayerStateInfo_Chu*>(dpsic)->playerInfo[i].second.second[i];
+				{
+					human_2->hand_card[i] = p.second.second[i];
+					//::std::cout << p.second.second[i] << " ";
+				}
+				//::std::cout << "\n";
 			}
 		}
 
@@ -87,29 +131,42 @@ void OLPukeManager::update()
 			::sf::Packet packet;
 			packet << static_cast<int>(rcdc.type()) << rcdc;
 			if (connector.sendNetworkEvent(packet))
-				deskCard.clear();
+			{
+				for (int k = 0; k < num_desk; k++)
+					deskCard[k] = -1;
+				num_desk = 0;
+			}
 		}
 		delete dpsic;
 	}
-	::pt::NetworkEvent* dcc = nullptr;
-	if (connector.getNetworkEvent(::pt::daChuDec, dcc))
+	::pt::NetworkEvent* dc = nullptr;
+	if (connector.getNetworkEvent(::pt::daDeskCard, dc, false))
 	{
-		//更新地主牌颜色
+		//更新出牌区
+		::std::vector<int>cards = static_cast<::pt::DaDeskCard*>(dc)->cards;
+		for (int i = 0; i < 20; i++)
+			deskCard[i] = -1;
+		num_desk = cards.size();
+		for (int i = 0; i < num_desk; i++)
+			deskCard[i] = cards[i];
 		int i, j;
-		for (int i = 0; i < static_cast<::pt::DaChuDec*>(dcc)->cards.size(); i++)
+		for (int k = 0; k < num_desk; k++)
 		{
-			i = static_cast<::pt::DaChuDec*>(dcc)->cards[i] / 4;
-			j = static_cast<::pt::DaChuDec*>(dcc)->cards[i] % 4;
+			i = deskCard[k] / 4;
+			j = deskCard[k] % 4;
 			puke.c[i][j].isDeleted = true;
 			puke.c[i][j].isOnDesk = true;
+			puke.c[i][j].isPressed = false;
+			puke.c[i][j].isSeleted = false;
 		}
+		//更新地主牌颜色
 		for (i = 0; i < 14; i++)
 		{
 			for (j = 0; j < 4; j++)
 			{
 				if (puke.c[i][j].isDeleted || puke.c[i][j].isOnDesk)
 				{
-					for (int k = 0; k < 3; k++)
+					for (int k = 0; k < num_desk; k++)
 					{
 						if (dizhuCard[k] == i * 4 + j)
 							sDizhuCard[k].sprite.setColor(Color(125, 125, 125, 125));
@@ -117,12 +174,16 @@ void OLPukeManager::update()
 				}
 			}
 		}
-		delete dcc;
+		delete dc;
 	}
 
 	//更新出牌区偏移量
-	puke_chupai_dx = 50 - deskCard.size();
-	puke_chupai_lx = 620 - deskCard.size() * puke_chupai_dx / 2;
+	puke_chupai_dx = 50 - num_desk;
+	puke_chupai_lx = 620 - num_desk * puke_chupai_dx / 2;
+
+	//更新self手牌位置坐标偏移量
+	puke_dt_e = 55 - human_self->num_card;
+	puke_dt_x = 620 - human_self->num_card * puke_dt_e / 2;
 
 	//更新牌的状态
 	for (int i = 0; i < 14; i++)
@@ -140,12 +201,29 @@ void OLPukeManager::update()
 		}
 	}
 
-	//更新self手牌位置坐标偏移量
-	puke_dt_e = 55 - human_self->num_card;
-	puke_dt_x = 620 - human_self->num_card * puke_dt_e / 2;
-
 	puke.c[human_self->hand_card[human_self->num_card - 1] / 4][human_self->hand_card[human_self->num_card - 1] % 4].isOnTop = true;
 
+	//更新出牌区牌的坐标
+	for (int i = 0; i < num_desk; i++)
+	{
+		int k = deskCard[i] / 4;
+		int l = deskCard[i] % 4;
+		puke.c[k][l].sprite.setPosition(puke_chupai_lx + i * puke_chupai_dx, 280);
+		puke.c[k][l].sprite.setScale(0.5, 0.5);
+	}
+
+	//更新自己牌的坐标
+	for (int i = 0; i < human_self->num_card; i++)
+	{
+		int k = human_self->hand_card[i] / 4;
+		int l = human_self->hand_card[i] % 4;
+		int posY;
+		if (puke.c[k][l].isSeleted)
+			posY = 470;
+		else
+			posY = 520;
+		puke.c[k][l].sprite.setPosition(puke_dt_x + i * puke_dt_e, posY);
+	}
 }
 
 void OLPukeManager::clearAll()
@@ -154,11 +232,18 @@ void OLPukeManager::clearAll()
 	puke_dt_e = 0;
 	puke_chupai_lx = 640;
 	puke_chupai_dx = 50;
+	num_desk = 0;
+	num_seleted = 0;
 	for (int i = 0; i < 20; i++)
 	{
 		human_self->hand_card[i] = -1;
 		human_1->hand_card[i] = -1;
 		human_2->hand_card[i] = -1;
+	}
+	for (int i = 0; i < 21; i++)
+	{
+		deskCard[i] = -1;
+		seletedCard[i] = -1;
 	}
 	human_self->num_card = 0;
 	human_1->num_card = 0;
@@ -169,70 +254,46 @@ void OLPukeManager::clearAll()
 
 void OLPukeManager::deal()
 {
-	::pt::NetworkEvent* ddc = nullptr;
-	isLoading = true;
-	while (!connector.getNetworkEvent(::pt::daDealCard, ddc));
-	isLoading = false;
-	if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_self->playerId)
+	/*::pt::NetworkEvent* ddc = nullptr;
+	if (connector.getNetworkEvent(::pt::daDealCard, ddc, false))
 	{
-		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
-			human_self->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
-	}
-	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_1->playerId)
-	{
-		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
-			human_1->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
-	}
-	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_2->playerId)
-	{
-		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
-			human_2->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
-	}
-	delete ddc;
-}
+		if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_self->playerId)
+		{
+			for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+				human_self->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+		}
+		else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_1->playerId)
+		{
+			for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+				human_1->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+		}
+		else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_2->playerId)
+		{
+			for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
+				human_2->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+		}
+		delete ddc;
+	}*/
 
-void OLPukeManager::deal_dizhuCard()
-{
-	::pt::NetworkEvent* ddc = nullptr;
-	isLoading = true;
-	while (!connector.getNetworkEvent(::pt::daDealCard, ddc));
-	isLoading = false;
-	if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_self->playerId)
+	::pt::NetworkEvent* dic = nullptr;
+	if (connector.getNetworkEvent(::pt::daDizhuCard, dic, false))
 	{
-		human_self->sid = DIZHU;
-		human_1->sid = NONM;
-		human_2->sid = NONM;
-		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
-			human_self->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
+		for (int i = 0; i < 3; i++)
+		{
+			dizhuCard[i] = static_cast<::pt::DaDizhuCard*>(dic)->cards[i];
+			sDizhuCard[i].sprite = puke.c[dizhuCard[i] / 4][dizhuCard[i] % 4].sprite;
+		}
+		delete dic;
 	}
-	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_1->playerId)
-	{
-		human_self->sid = NONM;
-		human_1->sid = DIZHU;
-		human_2->sid = NONM;
-		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
-			human_1->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
-	}
-	else if (static_cast<::pt::DaDealCard*>(ddc)->playerId == human_2->playerId)
-	{
-		human_self->sid = NONM;
-		human_1->sid = NONM;
-		human_2->sid = DIZHU;
-		for (int i = 0; i < static_cast<::pt::DaDealCard*>(ddc)->cards.size(); i++)
-			human_2->addCard(static_cast<::pt::DaDealCard*>(ddc)->cards[i]);
-	}
-	dizhuCard = static_cast<::pt::DaDealCard*>(ddc)->cards;
-	delete ddc;
 }
 
 void OLPukeManager::addToJudge(int i)
 {
-	seletedCard.push_back(i);
+	seletedCard[num_seleted++] = i;
 }
 
-PukeType OLPukeManager::checkType(::std::vector<int>& card)
+PukeType OLPukeManager::checkType(int* card, int num)
 {
-	int num = card.size();
 	if (num == 0)
 		return illegal;
 	else if (num == 2 && card[0] == 52 && card[1] == 53)
@@ -241,33 +302,19 @@ PukeType OLPukeManager::checkType(::std::vector<int>& card)
 		return bomb;
 	else
 	{
-		::std::vector<::std::vector<int>> list(4, ::std::vector<int>(2, 0));
-		int nt = 1, lm = 0;
-		for (int i = 0; i < num; i++)
+		int** temp = new int* [4];
+		for (int i = 0; i < 4; i++)
 		{
-			int k = card[i] / 4, l = card[i + 1] / 4;
-			if (k == l && card[i + 1] != -1)
-				nt++;
-			else
-			{
-				if (list[0][0] == 0)
-				{
-					list[0][0] = nt;
-					list[0][1]++;
-				}
-				else
-				{
-					if (list[lm][0] == nt)
-						list[lm][1]++;
-					else
-					{
-						list[++lm][0] = nt;
-						list[lm][1]++;
-					}
-				}
-				nt = 1;
-			}
+			temp[i] = new int[2];
+			temp[i][0] = 0;
+			temp[i][1] = 0;
 		}
+		User::analyse_card(card, num, temp);
+		int list[4][2] = { 0 };
+		for (int i = 0; i < 4; i++)
+			for (int j = 0; j < 2; j++)
+				list[i][j] = temp[i][j];
+		delete[] temp;
 		if (list[0][0] == 4)//四带
 		{
 			if (list[0][1] == 1)
@@ -444,18 +491,35 @@ PukeType OLPukeManager::checkType(::std::vector<int>& card)
 	return illegal;
 }
 
-bool OLPukeManager::IsFeafible()
+void OLPukeManager::sort_seleted()
 {
-	::std::sort(seletedCard.begin(), seletedCard.end(), [](int a, int b)->bool {return a <= b; });
+	int m, j, flag;
+	int temp;
+	m = num_seleted - 1;
+	flag = 1;
+	while ((m > 0) && (flag == 1))
+	{
+		flag = 0;
+		for (j = 0; j < m; j++)
+			if (seletedCard[j] > seletedCard[j + 1])
+			{
+				flag = 1;
+				temp = seletedCard[j];
+				seletedCard[j] = seletedCard[j + 1];
+				seletedCard[j + 1] = temp;
+			}
+		m--;
+	}
+
 	int num_max, num_t, data_t;
 	int tempList[20], num_tempList = 0;
-	int num_s = seletedCard.size();
+	int num_s = num_seleted;
 	while (num_s)
 	{
 		num_max = 0;
 		num_t = 1;
 		data_t = 0;
-		for (int i = 0; i < seletedCard.size(); i++)
+		for (int i = 0; i < num_seleted; i++)
 		{
 			if (seletedCard[i] == -1) continue;
 			if (((seletedCard[i + 1] / 4) == (seletedCard[i] / 4)) && seletedCard[i + 1] != -1)
@@ -481,10 +545,15 @@ bool OLPukeManager::IsFeafible()
 	}
 	for (int i = 0; i < num_tempList; i++)
 		seletedCard[i] = tempList[i];
-	PukeType desk_type = checkType(deskCard);
-	if (deskCard.size() > 0 && checkType(deskCard) == illegal)
+}
+
+bool OLPukeManager::IsFeafible()
+{
+	sort_seleted();
+	PukeType desk_type = checkType(deskCard, num_desk);
+	if (num_desk > 0 && checkType(deskCard, num_desk) == illegal)
 		desk_type = rocket;
-	PukeType seleted_type = checkType(seletedCard);
+	PukeType seleted_type = checkType(seletedCard, num_seleted);
 	if (seleted_type == illegal)//不合法
 		return false;
 	else //合法
@@ -540,12 +609,15 @@ bool OLPukeManager::handSeletedCard()
 	{
 		::pt::DaChuDec nwe;
 		nwe.dec = CHU;
-		nwe.cards = seletedCard;
+		for (int i = 0; i < num_seleted; i++)
+			nwe.cards.push_back(seletedCard[i]);
 		::sf::Packet packet;
 		packet << static_cast<int>(nwe.type()) << nwe;
 		if (connector.sendNetworkEvent(packet))
 		{
-			seletedCard.clear();
+			for (int i = 0; i < 20; i++)
+				seletedCard[i] = -1;
+			num_seleted = 0;
 			return true;
 		}
 		else

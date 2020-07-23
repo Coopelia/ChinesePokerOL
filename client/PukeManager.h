@@ -12,8 +12,8 @@ public:
 	int puke_dt_x, puke_dt_e;//玩家手牌区牌的位置参数
 	int puke_chupai_lx, puke_chupai_dx;//出牌区牌的位置参数
 	int num_desk, num_seleted, num_temp;//出牌区、选中的牌、辅助队列牌数
-	int deskCard[20];//出牌区的牌
-	int seletedCard[20];//选中要出的牌
+	int deskCard[21];//出牌区的牌
+	int seletedCard[21];//选中要出的牌
 	Card sDizhuCard[3];
 	Player* human;
 	AI* ai_1;//右边的ai

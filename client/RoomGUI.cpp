@@ -10,6 +10,9 @@ RoomGUI::RoomGUI()
 	this->sBackMenu.setTexture(tBackMenu);
 	this->tBackSelet.loadFromFile("assets/image/game/大幅/大厅弹窗/room_sel.png");
 	this->sBackSelet.setTexture(tBackSelet);
+	this->bt_update.setTextrue("assets/image/game/大厅弹框/#按钮/刷新.png");
+	this->bt_update.setScale(0.5, 0.5);
+	this->bt_update.setPosition(270, 90);
 	//// debug///////
 	/*this->room.resize(4);
 	this->button.resize(4);
@@ -38,25 +41,23 @@ void RoomGUI::setInfo(::std::vector<Room>& room)
 
 void RoomGUI::update_room_list()
 {
-	if (connector.isConnected && roomId == -1)
-	{
-		::pt::ReGetRoomList nwe;
-		::sf::Packet packet;
-		packet << static_cast<int>(nwe.type()) << nwe;
-		connector.sendNetworkEvent(packet);
-		::pt::NetworkEvent* drl = nullptr;
-		if (connector.getNetworkEvent(::pt::daRoomList, drl))
-		{
-			setInfo(static_cast<::pt::DaRoomList*>(drl)->room);
-			::std::cout << "获取到了房间列表\n";
-			::std::cout << "当前共有" << room.size() << "个房间\n";
-			delete drl;
-		}
-	}
+	::pt::ReGetRoomList nwe;
+	::sf::Packet packet;
+	packet << static_cast<int>(nwe.type()) << nwe;
+	connector.sendNetworkEvent(packet);
 }
 
 void RoomGUI::show()
 {
+	::pt::NetworkEvent* drl = nullptr;
+	if (connector.getNetworkEvent(::pt::daRoomList, drl, true))
+	{
+		setInfo(static_cast<::pt::DaRoomList*>(drl)->room);
+		::std::cout << "获取到了房间列表\n";
+		::std::cout << "当前共有" << room.size() << "个房间\n";
+		delete drl;
+	}
+
 	sBackMenu.setPosition(200, 60);
 	app->draw(sBackMenu);
 	for (int i = 0; i < room.size(); i++)
@@ -70,6 +71,8 @@ void RoomGUI::show()
 		button[i].setPosition(470 + (i % 2) * 350, 215 + (i / 2) * 110);
 		button[i].show();
 	}
+	bt_update.app = app;
+	bt_update.show();
 }
 
 int RoomGUI::onClick(::sf::Event& e)
@@ -86,7 +89,7 @@ int RoomGUI::onClick(::sf::Event& e)
 				isLoading = true;
 				::std::cout << "正在加载\n";
 				::pt::NetworkEvent* re = nullptr;
-				while (!connector.getNetworkEvent(::pt::reJoinRoom, re));
+				while (!connector.getNetworkEvent(::pt::reJoinRoom, re, true));
 				isLoading = false;
 				int id = static_cast<::pt::ReJoinRoom*>(re)->roomId;
 				return id;

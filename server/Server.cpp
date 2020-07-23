@@ -32,43 +32,40 @@ void Server::update_games()
 {
 	//遍历每个房间，更新数据
 	::std::list<Game* >::iterator itr;
-	for (itr = games.begin(); itr != games.end(); itr++)
+	for (itr = games.begin(); itr != games.end();)
 	{
-		::std::vector<Customor*>::iterator it;
-		for ( it = (*itr)->players.begin(); it !=(*itr)->players.end() ;)
+		if ((*itr)->player_list.size() == 0)
+			itr = games.erase(itr);
+		else
 		{
-			if ((*it) == nullptr)
-				it = (*itr)->players.erase(it);
-			else
-				it++;
+			(*itr)->update();
+			itr++;
 		}
-		(*itr)->update();
 	}
 }
 
 void Server::Update()
 {
-	::std::list<Customor*>::iterator itr;
 	mt_c.lock();
-	for ( itr = clients.begin(); itr !=clients.end(); itr++)
+	for ( int i=0;i<clients.size();i++)
 	{
 		//玩家有没有发送创建（加入）房间的请求
 		::pt::NetworkEvent* rcr = nullptr;
-		if ((*itr)->getNetworkEvent(::pt::reCreatRoom,rcr))//创建房间
+		if (clients[i]->getNetworkEvent(::pt::reCreatRoom,rcr))//创建房间
 		{
 			::std::cout << "create a game\n";
 			Game* game = new Game();
 			game->setID(games.size() + 1);
-			game->addPlayer((*itr));
+			game->addPlayer(i);
 			games.push_back(game);
 			::pt::DaPlayerStateInfo_Ready dpsr;
-			dpsr.isReady.push_back(::std::pair<int, bool>((*itr)->Id(), true));
+			dpsr.isReady.push_back(::std::pair<int, bool>(clients[i]->Id(), true));
 			::sf::Packet packet;
 			packet << static_cast<int>(dpsr.type()) << dpsr;
-			(*itr)->sendNetworkEvent(packet);
+			clients[i]->sendNetworkEvent(packet);
 			delete rcr;
 		}
-		else if ((*itr)->getNetworkEvent(::pt::reGetRoomList,rcr))//获取房间列表
+		if (clients[i]->getNetworkEvent(::pt::reGetRoomList,rcr))//获取房间列表
 		{
 			::std::cout << "send game list\n";
 			::pt::DaRoomList drl;
@@ -77,12 +74,12 @@ void Server::Update()
 			for (it = games.begin(); it != games.end(); it++)
 				drl.game.push_back((*it));
 			packet << static_cast<int>(drl.type()) << drl;
-			(*itr)->sendNetworkEvent(packet);
+			clients[i]->sendNetworkEvent(packet);
 			delete rcr;
 		}
 		//加入房间
 		::pt::NetworkEvent* rjr = nullptr;
-		if ((*itr)->getNetworkEvent(::pt::reJoinRoom, rjr))
+		if (clients[i]->getNetworkEvent(::pt::reJoinRoom, rjr))
 		{
 			::std::list<Game*>::iterator it;
 			for (it = games.begin(); it != games.end(); it++)
@@ -90,16 +87,11 @@ void Server::Update()
 				if ((*it)->getID() == static_cast<::pt::ReJoinRoom*>(rjr)->roomId)
 				{
 					::pt::ReJoinRoom re(0);
-					if ((*it)->getNum() == 3)
-						re.roomId = -1;
-					else
-					{
-						(*it)->addPlayer((*itr));
-						re.roomId = (*it)->getID();
-					}
+					re.roomId = (*it)->getID();
 					::sf::Packet pt;
 					pt << static_cast<int>(re.type()) << re;
-					(*itr)->sendNetworkEvent(pt);
+					clients[i]->sendNetworkEvent(pt);
+					(*it)->addPlayer(i);
 					break;
 				}
 			}
