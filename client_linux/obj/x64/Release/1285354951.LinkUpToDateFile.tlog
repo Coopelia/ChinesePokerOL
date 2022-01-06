@@ -1,1 +1,0 @@
-g++ -o "/home/ubuntu/projects/client_linux/bin/x64/Release/client_linux.out" -Wl,--no-undefined -Wl,-L"/home/ubuntu/projects/client_linux/../../../Download/SFML-2.5.1-linux-gcc-64-bit/SFML-2.5.1/lib" -Wl,-z,relro -Wl,-z,now -Wl,-z,noexecstack /home/ubuntu/projects/client_linux/obj/x64/Release/test.o -l"sfml-network" -l"sfml-system" -lpthread
